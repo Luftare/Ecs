@@ -1,5 +1,5 @@
 # Ecs
- Ecs is a general purpose entity-component-system library written in JavaScript. Create entities and change their behaviour by adding or removing components from them. Create independent systems for highly specific tasks. Ecs encourages for reusability of components and systems accross projects for increased productivity.
+ Ecs is a general purpose entity-component-system library written in JavaScript. Create entities and change their behaviour by adding or removing components, create independent systems for highly specific tasks. Ecs encourages for the reusability of components and systems accross projects for increased productivity.
 ### Key features
  - integrated event system and custom events
  - prioritized system calls
