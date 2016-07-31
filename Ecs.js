@@ -35,7 +35,7 @@
       constr.apply(comp,arguments);
     }
     
-    this.components[name] = comp;
+    this.components[name] = comp;//add the component
 
     var sys;
     var comp;
@@ -44,53 +44,66 @@
     for(key in systems){//update systems' entity lists
       isMatch = true;
       sys = systems[key];
-      for (var i = 0; i < sys.components.length; i++) {
-        comp = sys.components[i];
-        if( !(comp in this.components) ){
-          isMatch = false;
+      if(sys.validEntities[this.id]){
+       if(hasAnyOfProperties(sys.not,this.components)){//check if any banned components are included
+          if(sys.leave){
+              var args = parseArguments(sys.components,this.components);
+              args.push(this);
+              sys.leave.apply(sys,args);
+          }
+          delete sys.validEntities[this.id];
         }
       }
-      if(isMatch){
-        if(!sys.validEntities[this.id]){
-          //arrival to system
-          sys.validEntities[this.id] = this;
-          if(sys.arrive){
-            var args = parseArguments(sys.components,this.components);
-            args.push(this);
-            sys.arrive.apply(sys,args);
-          } 
-        }
+
+
+      if(!sys.validEntities[this.id] && hasAllProperties(sys.components,this.components)){
+        sys.validEntities[this.id] = this;
+        if(sys.arrive){
+          var args = parseArguments(sys.components,this.components);
+          args.push(this);
+          sys.arrive.apply(sys,args);
+        } 
       }
+      
     }
     return this;
   };
 
   Entity.prototype.remove = function(name){
+    if(!this.has(name)) return;
+    delete this.components[name];//delete component
     var sys;
     var comp;
     var isMatch = true;
 
-    for(key in systems){
+    for(key in systems){//iterate through all systems to update their validEntities lists
       sys = systems[key];
       if(this.id in sys.validEntities){
-        for (var i = 0; i < sys.components.length; i++) {
-          if(sys.components[i] === name){
+        if(!hasAllProperties(sys.components,this.components)){//is mandatory component removed?
             if(sys.leave){
               var args = parseArguments(sys.components,this.components);
               args.push(this);
-              sys.leave.apply(sys,args);
+              sys.leave.apply(sys,args);//entity was in this system's list and now doesn't meet the requirements after component removal
             }
             delete sys.validEntities[this.id];
           }
-        };
+        } else {//not included in valid entities list. Check if it could be a match now
+          if(hasAllProperties(sys.components,this.components) && !hasAnyOfProperties(sys.not,this.components)){
+            //Valid entity!
+            if(sys.arrive){
+              var args = parseArguments(sys.components,this.components);
+              args.push(this);
+              sys.arrive.apply(sys,args);//banned component removed --> add to this systems validEntities list
+            }
+          }
+        }
       }
-    }
-
-    var comp = this.components[name];
-    if(comp){
-      delete this.components[name];
-    }
+      
   };
+
+  Entity.prototype.has = function(name){
+    return (name in this.components);
+  }
 
   Entity.prototype.clearComponents = function(){
     this.components = {};
@@ -180,6 +193,7 @@
     //default values
     system.priority = system.priority || 0;
     system.components = system.components || [];
+    system.not = system.not || [];
 
     if(system.group){
       if(systemGroups[system.group]){//existing group
@@ -271,6 +285,26 @@
       arr.push(obj[keys[i]]);
     };
     return arr;
+  }
+
+  function hasAnyOfProperties(arr,obj){
+    var has = false;
+    for (var i = 0; i < arr.length; i++) {
+      if(arr[i] in obj){
+        has = true;
+      }
+    };
+    return has;
+  }
+
+  function hasAllProperties(arr,obj){
+    var has = true;
+    for (var i = 0; i < arr.length; i++) {
+      if( !(arr[i] in obj) ){
+        has = false;
+      }
+    };
+    return has;
   }
 
   function updatePrioritizedList(){
