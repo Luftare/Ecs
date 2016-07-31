@@ -35,7 +35,7 @@ Ecs.component("velocity", function(x, y){//another custom constructor function
     this.y = y || 0;
 });
 ```
-Create entities and add or remove components to change the behaviour of the entities:
+Create entities and add or remove components to change their behaviour:
 ```javascript
 var hero = Ecs.entity()
     .add("name", "Leeroy")
