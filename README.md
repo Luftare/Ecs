@@ -39,7 +39,7 @@ Create entities and add or remove components to change their behaviour:
 ```javascript
 var hero = Ecs.entity()
     .add("name", "Leeroy")
-    .add("collider","circle",50)
+    .add("collider","circle", 50)
     .add("sprite", "hero.png")
     .add("position", 50, 50)
     .add("velocity");//default values --> x:0, y:0
@@ -47,12 +47,12 @@ var hero = Ecs.entity()
 var rock = Ecs.entity()
     .add("position", 100, 100)
     .add("sprite", "rock.png")
-    .add("collider","circle",150);
+    .add("collider", "circle", 150);
 ```
 Create systems to introduce logic and to process data:
 ```javascript
 Ecs.system({//move entities with position and velocity components
-    components: ["position","velocity"],
+    components: ["position", "velocity"],
     every: function(pos, vel){
         pos.x += vel.x;
         pos.y += vel.y;
@@ -61,13 +61,13 @@ Ecs.system({//move entities with position and velocity components
 
 Ecs.system({//arrive method is called once when an entity meets the satisfying collection of components listed by this system
     components: ["name", "talkingToPhone"],
-    arrive: function(name,talkingToPhone){//--> entity got satisfying collection of components
+    arrive: function(name, talkingToPhone){//--> entity got satisfying collection of components
         console.log("Hello, it's " + name.val);
     },
-    every: function(name,talkingToPhone){//--> called on every run cycle
+    every: function(name, talkingToPhone){//--> called on every run cycle
         console.log("Bla bla bla...");
     },
-    leave: function(name,talkingToPhone){//--> entity lost satisfying collection of components
+    leave: function(name, talkingToPhone){//--> entity lost satisfying collection of components
         console.log("Bye!");
     }
 });
