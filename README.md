@@ -42,22 +42,22 @@ Ecs.system({//move entities with position and velocity components
     }
 });
 
-Ecs.system({//arrive method is called once when an entity meets the satisfying collection of components listed by this system
+Ecs.system({
     components: ["name", "talkingToPhone"],
-    arrive: function(name, talkingToPhone){//--> entity got satisfying collection of components
+    arrive: function(name, talkingToPhone){
         console.log("Hello, it's " + name.val);
     },
-    every: function(name, talkingToPhone){//--> called on every run cycle
+    every: function(name, talkingToPhone){
         console.log("Bla bla bla...");
     },
-    leave: function(name, talkingToPhone){//--> entity lost satisfying collection of components
+    leave: function(name, talkingToPhone){
         console.log("Bye!");
     }
 });
 
-Ecs.system({//listen to multiple events and handle events for each entity satisfying the component listing of this system
+Ecs.system({
     on: ["mousedown", "touchstart"],
-    components: ["position", "atPointer"],//component listing is optional. Removing is makes the system just a regular event listener
+    components: ["position", "atPointer"],
     handle: function(position, atPointer, entity, e){
         position.x = (e.changedTouches? e.changedTouched[0].pageX : e.pageX);
         position.y = (e.changedTouches? e.changedTouched[0].pageY : e.pageY);
