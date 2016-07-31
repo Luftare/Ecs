@@ -21,12 +21,12 @@
     this.components = {};
   };
 
-  Entity.prototype.add = function(){//arguments: name, par1, par2, par3...
+  Entity.prototype.add = function(){
     var name = arguments[0];
     var comp = createComponent();
 
     if(!componentProtos[nameToId[name]]){
-      ERROR("cannot find a component with name '" + name +"'");
+      ERROR("cannot find a component named: '" + name +"'");
     }
 
     var constr = componentProtos[nameToId[arguments[0]]].constr;
@@ -54,7 +54,11 @@
         if(!sys.validEntities[this.id]){
           //arrival to system
           sys.validEntities[this.id] = this;
-          if(sys.arrive) sys.arrive.call(sys,this);
+          if(sys.arrive){
+            var args = parseArguments(sys.components,this.components);
+            args.push(this);
+            sys.arrive.apply(sys,args);
+          } 
         }
       }
     }
@@ -71,7 +75,11 @@
       if(this.id in sys.validEntities){
         for (var i = 0; i < sys.components.length; i++) {
           if(sys.components[i] === name){
-            if(sys.leave) sys.leave.call(sys,this);
+            if(sys.leave){
+              var args = parseArguments(sys.components,this.components);
+              args.push(this);
+              sys.leave.apply(sys,args);
+            }
             delete sys.validEntities[this.id];
           }
         };
@@ -109,12 +117,10 @@
 
   // ---------- COMPONENT ---------- 
   Ecs.component = function(name,constr){
-    if(name === undefined) ERROR("cannot create a component without name. Pass name as the first argument.")
-    var compProto = {};
-    compProto.id = getId();
+    var compProto = new ComponentProto();
     compProto.name = name;
+    compProto.constr = constr || defaultConstructor;
     nameToId[compProto.name] = compProto.id;
-    compProto.constr = constr || function(val){this.val = val};
     componentProtos[compProto.id] = compProto;
     return compProto.id;
   };
@@ -123,8 +129,16 @@
     return new Component();
   }
 
+  function defaultConstructor(val){
+    this.val = val;
+  };
+
   function Component(){
     
+  };
+
+  function ComponentProto(){
+    this.id = getId();
   };
 
   // ---------- SYSTEM ---------- 
@@ -147,29 +161,22 @@
         }
 
         addEventListener(system.on[i],function(e){
-          //build custom arguments
           if(system.components.length > 0){
             for(key in system.validEntities){
               ent = system.validEntities[key];
-              args = [];
-              comps = ent.components;
-
-              for (var i = 0; i < system.components.length; i++) {//prepare arguments
-                args.push(comps[system.components[i]]);
-              }
+              var args = parseArguments(system.components,ent.components);
               args.push(ent);
               args.push(isCustomEvent? (e.detail || e) : e);
-              system.handle.apply(system,args);//if components listed, include them as the first arguments, then pass the entity and finally the event object
+              system.handle.apply(system,args);
             }
-          } else {
-            system.handle.call(system,isCustomEvent? (e.detail || e) : e);//no components listed for filtering, fire once and pass event object as argument
+          } else {//no components listed for filtering, fire once and pass event object as argument
+            system.handle.call(system,isCustomEvent? (e.detail || e) : e);
           }
         });
       };
     }
 
     if(system.init) system.init.call(system);
-
     //default values
     system.priority = system.priority || 0;
     system.components = system.components || [];
@@ -196,20 +203,13 @@
   System.prototype.run = function(globalArguments){//run all systems
     var ent;
     var args;
-    var comp;
-    var sys;
 
     if(this.pre) this.pre(globalArguments);
 
     if(this.every){
       for(key in this.validEntities){
         ent = this.validEntities[key];
-        args = [];
-        comps = ent.components;
-
-        for (var i = 0; i < this.components.length; i++) {//prepare arguments for the every call
-          args.push(comps[this.components[i]]);
-        }
+        args = parseArguments(this.components,ent.components);
         args.push(ent);
         args.push(globalArguments);
         this.every.apply(this,args);
@@ -240,6 +240,10 @@
     }
   };
 
+  Ecs.getEntities = function(){
+    return entities;
+  }
+
   // ---------- UTILITIES ---------- 
   function isFun(fun) {
     return typeof fun === 'function';
@@ -250,7 +254,7 @@
   }
 
   function isStr(str){
-    return typeof fun === 'string';
+    return typeof str === 'string';
   }
 
   function isNum(num) {
@@ -259,6 +263,14 @@
 
   function getId(){
     return idCounter++;
+  }
+
+  function parseArguments(keys,obj){//return new array of values in object listed in array 'keys'
+    var arr = [];
+    for (var i = 0; i < keys.length; i++) {
+      arr.push(obj[keys[i]]);
+    };
+    return arr;
   }
 
   function updatePrioritizedList(){
