@@ -64,3 +64,13 @@ Ecs.system({
     }
 });
 ```
+Run the systems in a simple loop:
+```javascript
+function loop(){
+    var dt;
+    /* calculate dt */
+    Ecs.run(dt);//optional global argument across all systems
+    requestAnimationFrame(loop);
+}
+loop();
+```
