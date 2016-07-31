@@ -6,6 +6,7 @@
  - System groups
  - Optional global system arguments
  - No dependencies
+ - Expressive entity filtering
 
 ### Examples
 
