@@ -1,11 +1,11 @@
 # Ecs
  Ecs is a general purpose entity-component-system library written in JavaScript suitable for game development. Create entities and change their behaviour by adding or removing components, create independent systems for highly specific tasks. Ecs encourages for the reusability of components and systems accross projects for increased productivity.
 ### Key features
- - integrated event system and custom events
- - prioritized system calls
- - system groups
- - optional global system arguments
- - no dependencies
+ - Integrated event system and custom events
+ - Prioritized system calls
+ - System groups
+ - Optional global system arguments
+ - No dependencies
 
 ### Examples
 
