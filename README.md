@@ -11,27 +11,10 @@
 
 Create components to hold data:
 ```javascript
-Ecs.component("name");//this component has single attribute --> val
+Ecs.component("name");
 
-Ecs.component("talkingToPhone");//same as above, but used as a boolean
-
-Ecs.component("collider",function(shape,size){
-    this.shape = shape;
-    if(shape === "circle"){
-        this.radius = size;
-    } else if(shape === "square"){
-        this.width = size*2;
-        this.height = size*2;
-    }
-});
-
-Ecs.component("position", function(x, y){//custom constructor function
-    this.x = x || 0;//default values
-    this.y = y || 0;
-});
-
-Ecs.component("velocity", function(x, y){//another custom constructor function
-    this.x = x || 0;//components hold only data, all logic and methods are decoupled to the systems
+Ecs.component("position", function(x, y){
+    this.x = x || 0;
     this.y = y || 0;
 });
 ```
@@ -42,7 +25,7 @@ var hero = Ecs.entity()
     .add("collider","circle", 50)
     .add("sprite", "hero.png")
     .add("position", 50, 50)
-    .add("velocity");//default values --> x:0, y:0
+    .add("velocity");
     
 var rock = Ecs.entity()
     .add("position", 100, 100)
