@@ -254,8 +254,30 @@
     }
   };
 
-  Ecs.getEntities = function(){
-    return entities;
+  Ecs.getEntities = function(has){
+    if(!has) return entities;
+    var ents = {};
+    var ent;
+    for(key in entities){
+      ent = entities[key];
+      if(hasAllProperties(has, ent.components)){
+        ents[ent.id] = ent;
+      }
+    }
+    return ents;
+  }
+
+  Ecs.getOtherEntities = function(has,excluded){
+    if(!has) return entities;
+    var ents = {};
+    var ent;
+    for(key in entities){
+      ent = entities[key];
+      if(hasAllProperties(has, ent.components) && excluded.id !== ent.id){
+        ents[ent.id] = ent;
+      }
+    }
+    return ents;
   }
 
   // ---------- UTILITIES ---------- 
@@ -288,23 +310,21 @@
   }
 
   function hasAnyOfProperties(arr,obj){
-    var has = false;
     for (var i = 0; i < arr.length; i++) {
       if(arr[i] in obj){
-        has = true;
+        return true;
       }
     };
-    return has;
+    return false;
   }
 
   function hasAllProperties(arr,obj){
-    var has = true;
     for (var i = 0; i < arr.length; i++) {
       if( !(arr[i] in obj) ){
-        has = false;
+        return false;
       }
     };
-    return has;
+    return true;
   }
 
   function updatePrioritizedList(){
