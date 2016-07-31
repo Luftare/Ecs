@@ -34,7 +34,7 @@ var rock = Ecs.entity()
 ```
 Create systems to introduce logic and to process data:
 ```javascript
-Ecs.system({//move entities with position and velocity components
+Ecs.system({
     components: ["position", "velocity"],
     every: function(pos, vel){
         pos.x += vel.x;
