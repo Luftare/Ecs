@@ -23,40 +23,33 @@
 
   Entity.prototype.add = function(){
     var name = arguments[0];
-    var comp = createComponent();
 
     if(!componentProtos[nameToId[name]]){
       ERROR("cannot find a component named: '" + name +"'");
     }
 
-    var constr = componentProtos[nameToId[arguments[0]]].constr;
-    if(arguments.length > 1) [].shift.call(arguments);//shift first parameter from the arguments array
-    if(constr){
-      constr.apply(comp,arguments);
-    }
-    
-    this.components[name] = comp;//add the component
+    var constr = componentProtos[nameToId[arguments[0]]].constr || Component;    
+    this.components[name] = new (Function.prototype.bind.apply(constr,arguments));//add the component
 
     var sys;
-    var comp;
     var isMatch = true;
 
     for(key in systems){//update systems' entity lists
       isMatch = true;
       sys = systems[key];
-      if(sys.validEntities[this.id]){
-       if(hasAnyOfProperties(sys.not,this.components)){//check if any banned components are included
-          if(sys.leave){
-              var args = parseArguments(sys.components,this.components);
-              args.push(this);
-              sys.leave.apply(sys,args);
-          }
-          delete sys.validEntities[this.id];
+      if(hasAnyOfProperties(sys.not,this.components)){//check if any banned components are included
+        isMatch = false;
+        if(sys.validEntities[this.id]){
+        if(sys.leave){
+            var args = parseArguments(sys.components,this.components);
+            args.push(this);
+            sys.leave.apply(sys,args);
+        }
+        delete sys.validEntities[this.id];
         }
       }
 
-
-      if(!sys.validEntities[this.id] && hasAllProperties(sys.components,this.components)){
+      if(isMatch && !sys.validEntities[this.id] && hasAllProperties(sys.components,this.components)){
         sys.validEntities[this.id] = this;
         if(sys.arrive){
           var args = parseArguments(sys.components,this.components);
@@ -90,6 +83,7 @@
         } else {//not included in valid entities list. Check if it could be a match now
           if(hasAllProperties(sys.components,this.components) && !hasAnyOfProperties(sys.not,this.components)){
             //Valid entity!
+            sys.validEntities[this.id] = this;
             if(sys.arrive){
               var args = parseArguments(sys.components,this.components);
               args.push(this);
@@ -138,10 +132,6 @@
     return compProto.id;
   };
 
-  function createComponent(){
-    return new Component();
-  }
-
   function defaultConstructor(val){
     this.val = val;
   };
@@ -172,20 +162,24 @@
             customEvents[system.on[i]] = new CustomEvent(system.on[i],{detail: "wazap"});//add new custom event
           }
         }
-
-        addEventListener(system.on[i],function(e){
-          if(system.components.length > 0){
-            for(key in system.validEntities){
-              ent = system.validEntities[key];
-              var args = parseArguments(system.components,ent.components);
-              args.push(ent);
-              args.push(isCustomEvent? (e.detail || e) : e);
-              system.handle.apply(system,args);
+        (function(system){
+          addEventListener(system.on[i],function(e){
+            if(system.preHandle){
+              system.preHandle.call(system,e);
             }
-          } else {//no components listed for filtering, fire once and pass event object as argument
-            system.handle.call(system,isCustomEvent? (e.detail || e) : e);
-          }
-        });
+            if(system.components.length > 0){
+              for(key in system.validEntities){//call handle function for each valid entity in this system
+                ent = system.validEntities[key];
+                var args = parseArguments(system.components,ent.components);
+                args.push(ent);
+                args.push(isCustomEvent? (e.detail || e) : e);
+                system.handle.apply(system,args);
+              }
+            } else {//no components listed for filtering, fire once and pass event object as argument
+              system.handle.call(system,isCustomEvent? (e.detail || e) : e);
+            }
+          });
+        })(system);
       };
     }
 
@@ -218,7 +212,7 @@
     var ent;
     var args;
 
-    if(this.pre) this.pre(globalArguments);
+    if(this.preEvery) this.preEvery(globalArguments);
 
     if(this.every){
       for(key in this.validEntities){
