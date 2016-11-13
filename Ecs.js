@@ -153,16 +153,13 @@
       system[key] = prop[key];
     }
 
-    if(system.on && system.handle && this.addEventListener){//setup event listening and handling
+    if(system.on){//setup event listening and handling
       for (var i = 0; i < system.on.length; i++) {
         isCustomEvent = false;
         if( !("on"+system.on[i] in this) ){//not a default evet
           isCustomEvent = true;
-          if(!(system.on[i] in customEvents)){//not in custom events
-            customEvents[system.on[i]] = new CustomEvent(system.on[i],{detail: "wazap"});//add new custom event
-          }
         }
-        (function(system){
+        if(!isCustomEvent){
           addEventListener(system.on[i],function(e){
             if(system.preHandle){
               system.preHandle.call(system,e);
@@ -172,14 +169,17 @@
                 ent = system.validEntities[key];
                 var args = parseArguments(system.components,ent.components);
                 args.push(ent);
-                args.push(isCustomEvent? (e.detail || e) : e);
+                args.push(e);
                 system.handle.apply(system,args);
               }
             } else {//no components listed for filtering, fire once and pass event object as argument
-              system.handle.call(system,isCustomEvent? (e.detail || e) : e);
+              system.handle.call(system,e);
+            }
+            if(system.postHandle){
+              system.postHandle.call(system,e);
             }
           });
-        })(system);
+        }
       };
     }
 
@@ -223,6 +223,8 @@
         this.every.apply(this,args);
       }
     }
+
+    if(this.postEvery) this.postEvery(globalArguments);
   }
 
   // ---------- ENGINE ---------- 
