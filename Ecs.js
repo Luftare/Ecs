@@ -1,347 +1,187 @@
-(function () {
-  var Ecs = {};
-  var idCounter = 1;//Ecs specific id counter
-  var componentProtos = {};//component templates
-  var entities = {};//entities by id
-  var systems = {};//systems by id
-  var toProcess = [];//systems by priority
-  var nameToId = {};//hash table of names and corresponding ids
-  var systemGroups = {};
-  var customEvents = {};
+var Ecs = (function(){
 
-  // ---------- ENTITY ---------- 
-  Ecs.entity = function(){
-    var ent = new Entity();
-    entities[ent.id] = ent;
-    return ent;
-  };
+	var idCounter,
+		components,
+		systems,
+		entities;
 
-  function Entity(){
-    this.id = getId();
-    this.components = {};
-  };
+	function Ecs(){
+		this.init();
+	};
 
-  Entity.prototype.add = function(){
-    var name = arguments[0];
+	Ecs.prototype.init = function(){
+		idCounter = 0;
+		entities = [];
+		components = {};
+		systems = [];
+	};
 
-    if(!componentProtos[nameToId[name]]){
-      ERROR("cannot find a component named: '" + name +"'");
-    }
+	Ecs.prototype.entity = function(){
+		var entity = new Entity();
+		entities.push(entity);
+		return entity;
+	};
 
-    var constr = componentProtos[nameToId[arguments[0]]].constr || Component;    
-    this.components[name] = new (Function.prototype.bind.apply(constr,arguments));//add the component
+	Ecs.prototype.system = function(options){
+		var system = new System(options);
+		systems.push(system);
+	};
 
-    var sys;
-    var isMatch = true;
+	Ecs.prototype.component = function(name,fn){
+		if(components[name]) throw new Error("Overwriting already existing component: "+name)
+		components[name] = fn || function(value){this.value = value;};
+	};
 
-    for(key in systems){//update systems' entity lists
-      isMatch = true;
-      sys = systems[key];
-      if(hasAnyOfProperties(sys.not,this.components)){//check if any banned components are included
-        isMatch = false;
-        if(sys.validEntities[this.id]){
-        if(sys.leave){
-            var args = parseArguments(sys.components,this.components);
-            args.push(this);
-            sys.leave.apply(sys,args);
-        }
-        delete sys.validEntities[this.id];
-        }
-      }
+	Ecs.prototype.run = function(globalArgs){
+		var i;
+		var len = systems.length;
+		for(i = 0; i < len; i++){
+			systems[i].run.call(systems[i],globalArgs);
+		}
+	};
 
-      if(isMatch && !sys.validEntities[this.id] && hasAllProperties(sys.components,this.components)){
-        sys.validEntities[this.id] = this;
-        if(sys.arrive){
-          var args = parseArguments(sys.components,this.components);
-          args.push(this);
-          sys.arrive.apply(sys,args);
-        } 
-      }
-      
-    }
-    return this;
-  };
+	Ecs.prototype.getEntities = function(){
+		return entities;
+	};
 
-  Entity.prototype.remove = function(name){
-    if(!this.has(name)) return;
-    delete this.components[name];//delete component
-    var sys;
-    var comp;
-    var isMatch = true;
+	function Entity(){
+		this.components = {};
+		this.id = idCounter++;
+	};
 
-    for(key in systems){//iterate through all systems to update their validEntities lists
-      sys = systems[key];
-      if(this.id in sys.validEntities){
-        if(!hasAllProperties(sys.components,this.components)){//is mandatory component removed?
-            if(sys.leave){
-              var args = parseArguments(sys.components,this.components);
-              args.push(this);
-              sys.leave.apply(sys,args);//entity was in this system's list and now doesn't meet the requirements after component removal
-            }
-            delete sys.validEntities[this.id];
-          }
-        } else {//not included in valid entities list. Check if it could be a match now
-          if(hasAllProperties(sys.components,this.components) && !hasAnyOfProperties(sys.not,this.components)){
-            //Valid entity!
-            sys.validEntities[this.id] = this;
-            if(sys.arrive){
-              var args = parseArguments(sys.components,this.components);
-              args.push(this);
-              sys.arrive.apply(sys,args);//banned component removed --> add to this systems validEntities list
-            }
-          }
-        }
-      }
-      
-  };
+	Entity.prototype.add = function(name){
+		var args = Array.prototype.slice.call(arguments);
+		args.shift();
+		this.components[name] = {};
+		components[name].apply(this.components[name],args);
+		onAddComponent(this);
+		return this;
+	};
 
-  Entity.prototype.has = function(name){
-    return (name in this.components);
-  }
+	Entity.prototype.remove = function(name){
+		delete this.components[name];
+		onRemoveComponent(this);
+	};
 
-  Entity.prototype.clearComponents = function(){
-    this.components = {};
-  }
+	function onAddComponent(entity){
+		var i;
+		var len = systems.length;
+		var has;
+		for(i = 0; i < len; i++){
+			if(systems[i].hasEntity(entity) && systems[i].entityHasNot(entity)){//did we add component that is in "not" list?
+				systems[i].removeEntity(entity);
+			}
+			if(!systems[i].hasEntity(entity) && systems[i].entityHasComponents(entity) && !systems[i].entityHasNot(entity)){//did we add component that suffices to a new system?
+				systems[i].addEntity(entity);
+			}
+		}
+	};
 
-  Entity.prototype.destroy = function(triggerLeave){
+	function onRemoveComponent(entity){
+		var i;
+		var len = systems.length;
+		for(i = 0; i < len; i++){
+			if(systems[i].hasEntity(entity) && !systems[i].entityHasComponents(entity)){//did we remove component that was needed for this system
+				systems[i].removeEntity(entity);
+			}
+			if(!systems[i].hasEntity(entity) && systems[i].entityHasComponents(entity) && !systems[i].entityHasNot(entity)){//did we remove "not" listed component and suffice to list?
+				systems[i].addEntity(entity);
+			}
+		}
+	};
 
-    if(triggerLeave){//trigger possible leave event handlers
-      for(key in this.components){
-        this.remove(key);
-      }
-    } else {//silently remove entity from systems
-      for(key in systems){
-        sys = systems[key];
-        if(this.id in sys.validEntities){
-          if(sys.validEntities.leave)
-          delete sys.validEntities[this.id];
-        }
-      }
-    }
-    delete entities[this.id];//remove from entity list
-    delete this.components;//remove components
-  };
+	function System(options){
+		this.components = options.components;
+		this.not = options.not;
+		this.every = options.every;
+		this.enter = options.enter;
+		this.leave = options.leave;
+		this.pre = options.pre;
+		this.id = idCounter++;
+		this.entities = [];
+    if(options.init) options.init.call(this);
+	};
 
-  // ---------- COMPONENT ---------- 
-  Ecs.component = function(name,constr){
-    var compProto = new ComponentProto();
-    compProto.name = name;
-    compProto.constr = constr || defaultConstructor;
-    nameToId[compProto.name] = compProto.id;
-    componentProtos[compProto.id] = compProto;
-    return compProto.id;
-  };
-
-  function defaultConstructor(val){
-    this.val = val;
-  };
-
-  function Component(){
-    
-  };
-
-  function ComponentProto(){
-    this.id = getId();
-  };
-
-  // ---------- SYSTEM ---------- 
-  Ecs.system = function(prop){
-    prop = prop || {};
-    var isCustomEvent;
-    var system = new System();
-    for(key in prop){
-      system[key] = prop[key];
-    }
-
-    if(system.on){//setup event listening and handling
-      for (var i = 0; i < system.on.length; i++) {
-        isCustomEvent = false;
-        if( !("on"+system.on[i] in this) ){//not a default evet
-          isCustomEvent = true;
-        }
-        if(!isCustomEvent){
-          addEventListener(system.on[i],function(e){
-            if(system.preHandle){
-              system.preHandle.call(system,e);
-            }
-            if(system.components.length > 0){
-              for(key in system.validEntities){//call handle function for each valid entity in this system
-                ent = system.validEntities[key];
-                var args = parseArguments(system.components,ent.components);
-                args.push(ent);
-                args.push(e);
-                system.handle.apply(system,args);
-              }
-            } else {//no components listed for filtering, fire once and pass event object as argument
-              system.handle.call(system,e);
-            }
-            if(system.postHandle){
-              system.postHandle.call(system,e);
-            }
-          });
-        }
-      };
-    }
-
-    if(system.init) system.init.call(system);
-    //default values
-    system.priority = system.priority || 0;
-    system.components = system.components || [];
-    system.not = system.not || [];
-
-    if(system.group){
-      if(systemGroups[system.group]){//existing group
-        systemGroups[system.group].push(system);
-      } else {
-        systemGroups[system.group] = [system];//create new array
-      }
-      updatePrioritizedList(systemGroups[system.group],system);
-    }
-
-    systems[system.id] = system;
-    updatePrioritizedList(toProcess,system);
-    return system.id;
-  };
-
-  function System(){
-    this.id = getId();
-    this.validEntities = {};
-  }
-
-  System.prototype.run = function(globalArguments){//run all systems
-    var ent;
+	System.prototype.run = function(globalArgs){
+		if(this.pre){
+			this.pre.apply(this,arguments);
+		}
+    if(!this.every) return;
     var args;
+		var i;
+		var len = this.entities.length;
+		for(i = 0; i < len; i++){
+      args = this.getArguments(this.entities[i]);
+      if(globalArgs) args.push(globalArgs);
+			this.every.apply(this.entities[i],args);
+		}
+	};
 
-    if(this.preEvery) this.preEvery(globalArguments);
+	System.prototype.getArguments = function(entity){
+		if(!this.components) return false;
+		var args = [];
+		var i;
+		var len = this.components.length;
+		for(i = 0; i < len; i++){
+			args.push(entity.components[this.components[i]]);
+		}
+		return args;
+	};
 
-    if(this.every){
-      for(key in this.validEntities){
-        ent = this.validEntities[key];
-        args = parseArguments(this.components,ent.components);
-        args.push(ent);
-        args.push(globalArguments);
-        this.every.apply(this,args);
-      }
-    }
+	System.prototype.hasEntity = function(entity){
+		var i;
+		var len = this.entities.length;
+		for(i = 0; i < len; i++){
+			if(this.entities[i].id === entity.id) return true;
+		}
+		return false;
+	};
 
-    if(this.postEvery) this.postEvery(globalArguments);
-  }
+	System.prototype.removeEntity = function(entity){
+		if(this.leave){
+			this.leave.apply(entity,this.getArguments(entity));
+		}
+		var i;
+		var len = this.entities.length;
+		for(i = 0; i < len; i++){
+			if(this.entities[i].id === entity.id){
+				this.entities.splice(i,1);
+				return true;
+			}
+		}
+		return false;
+	};
 
-  // ---------- ENGINE ---------- 
-  Ecs.run = function(args){
-    for (var i = 0; i < toProcess.length; i++) {//run all systems in descending priority order
-      toProcess[i].run(args);
-    };
-  };
+	System.prototype.addEntity = function(entity){
+		this.entities.push(entity);
+		if(this.enter){
+			this.enter.apply(entity,this.getArguments(entity));
+		}
+	};
 
-  Ecs.runGroup = function(groupName,args){//run systems within a specific group in descending priority order
-    var group = systemGroups[groupName];
-    if(group){
-      for (var i = 0; i < group.length; i++) {
-        group[i].run(args);
-      };
-    }
-  };
+	System.prototype.entityHasComponents = function(entity){
+		if(!this.components) return true;
+		var i;
+		var len = this.components.length;
+		for(i = 0; i < len; i++){
+			if(!entity.components[this.components[i]]){
+				return false;
+			}
+		}
+		return true;
+	};
 
-  Ecs.event = function(name,args){//trigger custom event with custom argument
-    if(name in customEvents){
-      customEvents[name].initCustomEvent(name, true, true, args);
-      dispatchEvent(customEvents[name], args);
-    }
-  };
+	System.prototype.entityHasNot = function(entity){
+		if(!this.not) return false;
+		var i;
+		var len = this.not.length;
+		for(i = 0; i < len; i++){
+			if(entity.components[this.not[i]]){
+				return true;
+			}
+		}
+		return false;
+	};
 
-  Ecs.getEntities = function(has){
-    if(!has) return entities;
-    var ents = {};
-    var ent;
-    for(key in entities){
-      ent = entities[key];
-      if(hasAllProperties(has, ent.components)){
-        ents[ent.id] = ent;
-      }
-    }
-    return ents;
-  }
-
-  Ecs.getOtherEntities = function(has,excluded){
-    if(!has) return entities;
-    var ents = {};
-    var ent;
-    for(key in entities){
-      ent = entities[key];
-      if(hasAllProperties(has, ent.components) && excluded.id !== ent.id){
-        ents[ent.id] = ent;
-      }
-    }
-    return ents;
-  }
-
-  // ---------- UTILITIES ---------- 
-  function isFun(fun) {
-    return typeof fun === 'function';
-  }
-
-  function ERROR(msg){
-    throw new Error(msg);
-  }
-
-  function isStr(str){
-    return typeof str === 'string';
-  }
-
-  function isNum(num) {
-    return !isNaN(parseFloat(num)) && isFinite(num);
-  }
-
-  function getId(){
-    return idCounter++;
-  }
-
-  function parseArguments(keys,obj){//return new array of values in object listed in array 'keys'
-    var arr = [];
-    for (var i = 0; i < keys.length; i++) {
-      arr.push(obj[keys[i]]);
-    };
-    return arr;
-  }
-
-  function hasAnyOfProperties(arr,obj){
-    for (var i = 0; i < arr.length; i++) {
-      if(arr[i] in obj){
-        return true;
-      }
-    };
-    return false;
-  }
-
-  function hasAllProperties(arr,obj){
-    for (var i = 0; i < arr.length; i++) {
-      if( !(arr[i] in obj) ){
-        return false;
-      }
-    };
-    return true;
-  }
-
-  function updatePrioritizedList(){
-    var arr = arguments[0];
-    for (var i = 1; i < arguments.length; i++) {
-      arr.push(arguments[i]);
-    };
-    arr.sort(compareDescendingPriority);
-  }
-
-  function compareDescendingPriority(a,b){
-    return b.priority - a.priority;
-  }
-
-  // ---------- EXPORTS ---------- 
-  if (typeof module === "object" && // CommonJS
-  typeof module.exports === "object") {
-    module.exports = Ecs;
-  } else if (typeof define === "function" && define.amd) { // AMD module
-    define("Ecs", [], function() { return Ecs } )
-  } else { // global object
-    this.Ecs = Ecs;
-  }
-}).call(this);
+	return Ecs;
+})();
