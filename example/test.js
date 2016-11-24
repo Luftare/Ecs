@@ -1,4 +1,5 @@
 var ecs = new Ecs();
+var ecs2 = new Ecs();
 
 //components
 ecs.component("name",function (first,last) {

@@ -1,4 +1,4 @@
-var Ecs = (function(){
+var Ecs = function(){
 
 	var idCounter,
 		components,
@@ -183,5 +183,5 @@ var Ecs = (function(){
 		return false;
 	};
 
-	return Ecs;
-})();
+	return new Ecs();
+};
