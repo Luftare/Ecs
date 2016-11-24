@@ -3,7 +3,8 @@ var Ecs = function(){
 	var idCounter,
 		components,
 		systems,
-		entities;
+		entities,
+    eventBus;//TODO: implement event bus
 
 	function Ecs(){
 		this.init();
