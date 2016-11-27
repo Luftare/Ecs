@@ -2,7 +2,7 @@
 Ecs is an implementation of entity component system architecture in Javascript.
 
 ## Examples
-Create new instance of Ecs.
+Create an instance of Ecs.
 ```javascript
 var ecs = new Ecs();
 ```
