@@ -97,21 +97,23 @@ ecs.system({
     }
 });
 ```
-Systems have an event system to communicate accross systems.
+Systems have an event bus to communicate with other systems.
 ```javascript
 ecs.system({
   init: function () {//called once system is created
     var system = this;
     document.addEventListener("click",function (e) {
-      system.emit("click_event",e);
+      var msg = "Hello!";
+      system.emit("some_event",msg);
     });
   }
 });
 
 ecs.system({
-  on: ["click_event"],
-  onevent: function (e) {
-    console.log("CLICK!",e)
+  init: function () {
+    this.on("some_event",function (e) {
+      console.log(e)//clicking will print "Hello!"
+    })
   }
 });
 ```

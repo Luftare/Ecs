@@ -27,6 +27,7 @@ var Ecs = function(){
 	Ecs.prototype.system = function(options){
 		var system = new System(options);
 		systems.push(system);
+		return system;
 	};
 
 	Ecs.prototype.component = function(name,fn){
@@ -56,15 +57,28 @@ var Ecs = function(){
 		return entities;
 	};
 
+	Ecs.prototype.emit = function () {
+		var name = arguments[0];
+		var args = Array.prototype.slice.call(arguments);
+		args.shift();
+		for (var i = 0; i < systems.length; i++) {
+			if(systems[i].subscriptions[name]){
+				systems[i].subscriptions[name].apply(systems[i], args);
+			}
+		}
+	};
+
 	function Entity(){
 		this.components = {};
 		this.id = idCounter++;
 	};
 
-	Entity.prototype.add = function(name){
+	Entity.prototype.add = function(){
+		var name = arguments[0];
 		var args = Array.prototype.slice.call(arguments);
 		args.shift();
 		this.components[name] = {};
+		if(!components[name]) throw new Error("Component doesn't exist: "+name)
 		components[name].apply(this.components[name],args);
 		onAddComponent(this);
 		return this;
@@ -73,6 +87,26 @@ var Ecs = function(){
 	Entity.prototype.remove = function(name){
 		delete this.components[name];
 		onRemoveComponent(this);
+		return this;
+	};
+
+	Entity.prototype.has = function(name){
+		return !!this.components[name];
+	};
+
+	Entity.prototype.destroy = function () {
+		for (var i = 0; i < entities.length; i++) {
+			if(entities[i].id === this.id){
+				entities.splice(i,1);
+			}
+		}
+		for (var i = 0; i < systems.length; i++) {
+			for (var j = 0; j < systems[i].entities.length; j++) {
+				if(systems[i].entities[j].id === this.id){
+					systems[i].entities.splice(j,1);
+				}
+			}
+		}
 	};
 
 	function onAddComponent(entity){
@@ -109,19 +143,12 @@ var Ecs = function(){
 				this[key] = options[key];
 			}
 		}
-		// this.components = options.components;
-		// this.not = options.not;
-		// this.every = options.every;
-		// this.onenter = options.onenter;
-		// this.onleave = options.onleave;
-		// this.onevent = options.onevent;
-		// this.on = options.on;
-		// this.pre = options.pre;
-		//
+
 		if(this.group !== undefined){
 			groups[this.group] = groups[this.group]? groups[this.group] : [];
 			groups[this.group].push(this);
 		}
+		this.subscriptions = {};
 		this.entities = [];
     if(options.init) options.init.call(this);
 	};
@@ -149,6 +176,7 @@ var Ecs = function(){
 		for(i = 0; i < len; i++){
 			args.push(entity.components[this.components[i]]);
 		}
+		args.push(entity);
 		return args;
 	};
 
@@ -222,15 +250,15 @@ var Ecs = function(){
 		var args = Array.prototype.slice.call(arguments);
 		args.shift();
 		for (var i = 0; i < systems.length; i++) {
-			if(systems[i].on && systems[i].onevent){
-				for (var j = 0; j < systems[i].on.length; j++) {
-					if(systems[i].on[j] === name){
-						systems[i].onevent.apply(systems[i],args);
-					}
-				}
+			if(systems[i].subscriptions[name]){
+				systems[i].subscriptions[name].apply(systems[i], args);
 			}
 		}
 	};
+
+	System.prototype.on = function (name,cb) {
+		this.subscriptions[name] = cb;
+	}
 
 	return new Ecs();
 };
