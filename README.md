@@ -1,5 +1,5 @@
 # Entity Component System
-Ecs is an implementation of entity component system architecture in Javascript.
+Ecs is an implementation of entity component system architecture in Javascript. Live demo: https://rawgit.com/Luftare/Ecs/master/example/index.html
 
 ## Examples
 Create an instance of Ecs.
