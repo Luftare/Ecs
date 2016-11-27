@@ -1,74 +1,98 @@
 var ecs = new Ecs();
-var ecs2 = new Ecs();
 
 //components
-ecs.component("name",function (first,last) {
-  this.first = first;
-  this.last = last;
-  this.full = first + " " + last;
+ecs.component("position", function(x, y){
+    this.x = x || 0;
+    this.y = y || 0;
 });
 
-ecs.component("hidden");//shorthand, can be used as bit or as single value, see next component
-
-ecs.component("sprite");
-
-ecs.component("position",function(x,y){
-  this.x = x;
-  this.y = y;
+ecs.component("velocity", function(x, y){
+    this.x = x || 0;
+    this.y = y || 0;
 });
 
-ecs.component("velocity",function(x,y){
-  this.x = x;
-  this.y = y;
+ecs.component("input", function(){
+    this.UP = false;
+    this.DOWN = false;
+    this.LEFT = false;
+    this.RIGHT = false;
+    this.SPACE = false;
 });
+
+ecs.component("playerControlled");
+
+ecs.component("AIControlled");
 
 //systems
-ecs.system({//every and pre system calls
-  components: ["position","velocity"],
-  pre: function () {
-    //called before iterating all entities by "every"
+ecs.system({//move entities with velocity
+    components: ["position", "velocity"],
+    every: function(pos, vel){//iterates all entities with position and velocity component
+        pos.x += vel.x;
+        pos.y += vel.y;
+    }
+});
+
+ecs.system({
+  init: function () {//called once system is created
+    var system = this;
+    document.addEventListener("keydown",function (e) {//keydown event
+      var key = system.keyCodeToName[e.keyCode];
+      if(key){//check if valid key: SPACE, UP, DOWN, LEFT or RIGHT
+        system.emit("keyboardEvent",key,true);
+      }
+    });
+
+    document.addEventListener("keyup",function (e) {//keyup event
+      var key = system.keyCodeToName[e.keyCode];
+      if(key){//check if valid key: SPACE, UP, DOWN, LEFT or RIGHT
+        system.emit("keyboardEvent",key,false);
+      }
+    });
   },
-  every: function (pos,vel,dt) {//executes when ecs.run is called. dt is the global argument
-    pos.x += vel.x;
-    pos.y += vel.y;
+  keyCodeToName: {//translate keyCode to key string
+    "32":"SPACE",
+    "38":"UP",
+    "40":"DOWN",
+    "37":"LEFT",
+    "39":"RIGHT"
   }
 });
 
-ecs.system({//rendering
-  components: ["position","sprite"],
-  not: ["hidden"],//exclude entities that are hidden
-  pre: function () {
-    //clear the drawing canvas, called once before iterating through the entities in the "every" call
-  },
-  every: function (pos,sprite) {//executes when ecs.run is called
-    //sprite.value --> "hero.png" in case of our hero, "monster.png" in case of the monster
+ecs.system({
+  components: ["input","playerControlled"],
+  on: ["keyboardEvent"],
+  onevent: function (key,value) {
+    this.iterate(function (input) {//iterate all entities
+      input[key] = value;
+    });
   }
 });
 
-ecs.system({//system enter and leave events
-  components: ["name"],
-  enter: function (name) {
-    console.log("Welcome, " + name.full);
-  },
-  leave: function () {
-    console.log("Bye!");
-  },
+ecs.system({
+  components: ["velocity","input"],
+  every: function (vel,input) {//simple input handler
+    var speed = 5;
+    vel.x = vel.y = 0;
+    if(input.UP) vel.y = -speed;
+    if(input.DOWN) vel.y = speed;
+    if(input.LEFT) vel.x = -speed;
+    if(input.RIGHT) vel.x = speed;
+  }
 });
 
 //entities
-var hero = ecs.entity()
-            .add("name","Jack","Spears")
-            .add("sprite","hero.png")
-            .add("position",50,40)
-            .add("velocity",5,0);
+var player = ecs.entity()
+    .add("input")
+    .add("playerControlled")
+    .add("position", 50, 50)
+    .add("velocity",0,0);
 
-var monster = ecs.entity()
-            .add("sprite","monster.png")
-            .add("position",100,40)
-            .add("velocity",-5,0);
+var zombi = ecs.entity()
+    .add("input")
+    .add("AIControlled")
+    .add("position", 100, 50)
+    .add("velocity",0,0);
 
-//example of game loop
-var dt = 1000;//argument for all systems when calling run
 setInterval(function () {
-  ecs.run(dt);//calling "every" method on all systems, passing a global argument
-},dt);
+  ecs.run();
+},100)

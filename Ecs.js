@@ -3,8 +3,8 @@ var Ecs = function(){
 	var idCounter,
 		components,
 		systems,
-		entities,
-    eventBus;//TODO: implement event bus
+		groups,
+		entities;
 
 	function Ecs(){
 		this.init();
@@ -14,6 +14,7 @@ var Ecs = function(){
 		idCounter = 0;
 		entities = [];
 		components = {};
+		groups = {};
 		systems = [];
 	};
 
@@ -38,6 +39,16 @@ var Ecs = function(){
 		var len = systems.length;
 		for(i = 0; i < len; i++){
 			systems[i].run.call(systems[i],globalArgs);
+		}
+	};
+
+	Ecs.prototype.runGroup = function(name,globalArgs){
+		if(groups[name]){
+			var i;
+			var len = groups[name].length;
+			for(i = 0; i < len; i++){
+				groups[name][i].run.call(groups[name][i],globalArgs);
+			}
 		}
 	};
 
@@ -92,13 +103,25 @@ var Ecs = function(){
 	};
 
 	function System(options){
-		this.components = options.components;
-		this.not = options.not;
-		this.every = options.every;
-		this.enter = options.enter;
-		this.leave = options.leave;
-		this.pre = options.pre;
-		this.id = idCounter++;
+		var key;
+		for(key in options){
+			if(options.hasOwnProperty(key)){
+				this[key] = options[key];
+			}
+		}
+		// this.components = options.components;
+		// this.not = options.not;
+		// this.every = options.every;
+		// this.onenter = options.onenter;
+		// this.onleave = options.onleave;
+		// this.onevent = options.onevent;
+		// this.on = options.on;
+		// this.pre = options.pre;
+		//
+		if(this.group !== undefined){
+			groups[this.group] = groups[this.group]? groups[this.group] : [];
+			groups[this.group].push(this);
+		}
 		this.entities = [];
     if(options.init) options.init.call(this);
 	};
@@ -139,8 +162,8 @@ var Ecs = function(){
 	};
 
 	System.prototype.removeEntity = function(entity){
-		if(this.leave){
-			this.leave.apply(entity,this.getArguments(entity));
+		if(this.onleave){
+			this.onleave.apply(entity,this.getArguments(entity));
 		}
 		var i;
 		var len = this.entities.length;
@@ -155,8 +178,8 @@ var Ecs = function(){
 
 	System.prototype.addEntity = function(entity){
 		this.entities.push(entity);
-		if(this.enter){
-			this.enter.apply(entity,this.getArguments(entity));
+		if(this.onenter){
+			this.onenter.apply(entity,this.getArguments(entity));
 		}
 	};
 
@@ -182,6 +205,31 @@ var Ecs = function(){
 			}
 		}
 		return false;
+	};
+
+	System.prototype.iterate = function (cb) {
+		var args;
+		var i;
+		var len = this.entities.length;
+		for(i = 0; i < len; i++){
+			args = this.getArguments(this.entities[i]);
+			cb.apply(this.entities[i],args);
+		}
+	};
+
+	System.prototype.emit = function () {
+		var name = arguments[0];
+		var args = Array.prototype.slice.call(arguments);
+		args.shift();
+		for (var i = 0; i < systems.length; i++) {
+			if(systems[i].on && systems[i].onevent){
+				for (var j = 0; j < systems[i].on.length; j++) {
+					if(systems[i].on[j] === name){
+						systems[i].onevent.apply(systems[i],args);
+					}
+				}
+			}
+		}
 	};
 
 	return new Ecs();
