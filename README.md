@@ -9,27 +9,27 @@ var ecs = new Ecs();
 ###Component
 Create components to hold data.
 ```javascript
-ecs.component("name",function (first,last) {
+ecs.component("name", function (first,last) {
   this.first = first;
   this.last = last;
   this.full = first + " " + last;
 });
 
-ecs.component("sprite",function(src){
+ecs.component("sprite", function (src){
   this.src = src;
 });
 
-ecs.component("position", function(x, y){
+ecs.component("position", function (x, y){
     this.x = x || 0;
     this.y = y || 0;
 });
 
-ecs.component("velocity", function(x, y){
+ecs.component("velocity", function (x, y){
     this.x = x || 0;
     this.y = y || 0;
 });
 
-ecs.component("input", function(){
+ecs.component("input", function (){
     this.UP = false;
     this.DOWN = false;
     this.LEFT = false;
@@ -54,7 +54,7 @@ var player = ecs.entity()
     .add("position", 50, 50)
     .add("velocity",0,0);
 
-var coin = ecs.entity()
+var powerup = ecs.entity()
     .add("position",100,100)
     .add("sprite","coin.png");
 ```
@@ -63,7 +63,7 @@ Create systems to implement logic. Systems process entities that have all compon
 ```javascript
 ecs.system({//move entities with velocity
     components: ["position", "velocity"],
-    every: function(pos, vel){//iterates all entities with position and velocity component
+    every: function (pos, vel){//iterates all entities with position and velocity component
         pos.x += vel.x;
         pos.y += vel.y;
     }
@@ -77,7 +77,7 @@ ecs.system({//sprite rendering system
     pre: function () {//called once before iterating all entities
       view.clearCanvas();//assume a view module/object
     },
-    every: function(pos, sprite){
+    every: function (pos, sprite){
       view.drawImage(sprite.src,pos.x,pos.y);
     }
 });
