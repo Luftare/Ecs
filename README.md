@@ -108,7 +108,7 @@ ecs.component("velocity", Vector);
 ecs.system({
   components: ["position", "velocity"],
   every: function(pos,vel){
-    pos.add(vel);
+    pos.add(vel);//Using a method stored to a component
   }
 });
 ```
