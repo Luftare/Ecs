@@ -1,10 +1,10 @@
 var Ecs = function(){
-
 	var idCounter,
 		components,
 		systems,
 		groups,
-		entities;
+		entities,
+		garbage;
 
 	function Ecs(){
 		this.init();
@@ -35,7 +35,18 @@ var Ecs = function(){
 		components[name] = fn || function(value){this.value = value;};
 	};
 
+	Ecs.prototype.removeEntity = function (id) {
+		for (var i = 0; i < entities.length; i++) {
+			if(entities[i].id === id){
+				entities[i]._disabled = true;
+				garbage = true;
+				break;
+			}
+		}
+	};
+
 	Ecs.prototype.run = function(globalArgs){
+		if(garbage) clearGarbage();
 		var i;
 		var len = systems.length;
 		for(i = 0; i < len; i++){
@@ -44,6 +55,7 @@ var Ecs = function(){
 	};
 
 	Ecs.prototype.runGroup = function(name,globalArgs){
+		if(garbage) clearGarbage();
 		if(groups[name]){
 			var i;
 			var len = groups[name].length;
@@ -55,6 +67,19 @@ var Ecs = function(){
 
 	Ecs.prototype.getEntities = function(){
 		return entities;
+	};
+
+	Ecs.prototype.getEntityById = function (id) {
+		for (var i = 0; i < entities.length; i++) {
+			if(id === entities[i].id) return entities[i];
+		}
+	}
+
+	Ecs.prototype.iterateAll = function (cb) {
+		var len = entities.length;
+		for (var i = 0; i < len; i++) {
+			cb(entities[i]);
+		}
 	};
 
 	Ecs.prototype.emit = function () {
@@ -76,10 +101,9 @@ var Ecs = function(){
 	Entity.prototype.add = function(){
 		var name = arguments[0];
 		var args = Array.prototype.slice.call(arguments);
-		args.shift();
 		this.components[name] = {};
 		if(!components[name]) throw new Error("Component doesn't exist: "+name)
-		components[name].apply(this.components[name],args);
+		this.components[name] = new (Function.prototype.bind.apply(components[name], args));
 		onAddComponent(this);
 		return this;
 	};
@@ -108,6 +132,18 @@ var Ecs = function(){
 			}
 		}
 	};
+
+	function clearGarbage() {
+		entities = entities.filter(function (e) {
+			return !e._disabled;
+		});
+		for (var i = 0; i < systems.length; i++) {
+			systems[i].entities = systems[i].entities.filter(function (e) {
+				return !e._disabled;
+			})
+		}
+		garbage = false;
+	}
 
 	function onAddComponent(entity){
 		var i;
@@ -162,10 +198,12 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-      args = this.getArguments(this.entities[i]);
-      if(globalArgs) args.push(globalArgs);
-			this.every.apply(this.entities[i],args);
+			this._currentEntity = this.entities[i];
+			args = this.getArguments(this.entities[i]);
+			if(globalArgs) args.push(globalArgs);
+			this.every.apply(this,args);
 		}
+		this._currentEntity = null;
 	};
 
 	System.prototype.getArguments = function(entity){
@@ -242,6 +280,18 @@ var Ecs = function(){
 		for(i = 0; i < len; i++){
 			args = this.getArguments(this.entities[i]);
 			cb.apply(this.entities[i],args);
+		}
+	};
+
+	System.prototype.iterateOthers = function (cb) {
+		var args;
+		var i;
+		var len = this.entities.length;
+		for(i = 0; i < len; i++){
+			if(this.entities[i].id !== this._currentEntity.id){
+				args = this.getArguments(this.entities[i]);
+				cb.apply(this.entities[i],args);
+			}
 		}
 	};
 
