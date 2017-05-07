@@ -119,18 +119,8 @@ var Ecs = function(){
 	};
 
 	Entity.prototype.destroy = function () {
-		for (var i = 0; i < entities.length; i++) {
-			if(entities[i].id === this.id){
-				entities.splice(i,1);
-			}
-		}
-		for (var i = 0; i < systems.length; i++) {
-			for (var j = 0; j < systems[i].entities.length; j++) {
-				if(systems[i].entities[j].id === this.id){
-					systems[i].entities.splice(j,1);
-				}
-			}
-		}
+		this._disabled = true;
+		garbage = true;
 	};
 
 	function clearGarbage() {
@@ -198,10 +188,12 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			this._currentEntity = this.entities[i];
-			args = this.getArguments(this.entities[i]);
-			if(globalArgs) args.push(globalArgs);
-			this.every.apply(this,args);
+			if(!this.entities[i]._disabled){
+				this._currentEntity = this.entities[i];
+				args = this.getArguments(this.entities[i]);
+				if(globalArgs) args.push(globalArgs);
+				this.every.apply(this,args);
+			}
 		}
 		this._currentEntity = null;
 	};
@@ -278,8 +270,10 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			args = this.getArguments(this.entities[i]);
-			cb.apply(this.entities[i],args);
+			if(!this.entities[i]._disabled){
+				args = this.getArguments(this.entities[i]);
+				cb.apply(this.entities[i],args);
+			}
 		}
 	};
 
@@ -288,9 +282,11 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			if(this.entities[i].id !== this._currentEntity.id){
-				args = this.getArguments(this.entities[i]);
-				cb.apply(this.entities[i],args);
+			if(!this.entities[i]._disabled){
+				if(this.entities[i].id !== this._currentEntity.id){
+					args = this.getArguments(this.entities[i]);
+					cb.apply(this.entities[i],args);
+				}
 			}
 		}
 	};
