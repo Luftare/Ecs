@@ -6,7 +6,7 @@ Create an instance of Ecs.
 ```javascript
 var ecs = new Ecs();
 ```
-###Component
+### Component
 Create components to hold data.
 ```javascript
 ecs.component("name", function (first,last) {
@@ -43,7 +43,7 @@ ecs.component("playerControlled");
 
 ecs.component("hidden");
 ```
-###Entity
+### Entity
 Create entities and add or remove components to change their behaviour.
 ```javascript
 var player = ecs.entity()
@@ -58,7 +58,7 @@ var powerup = ecs.entity()
     .add("position",100,100)
     .add("sprite","coin.png");
 ```
-###System
+### System
 Create systems to implement logic. Systems process entities that have all components listed in the "components"-array.
 ```javascript
 ecs.system({//move entities with velocity
@@ -67,6 +67,28 @@ ecs.system({//move entities with velocity
         pos.x += vel.x;
         pos.y += vel.y;
     }
+});
+```
+Components with constructors can be optionally used although it is against the paradigm of ECS.
+```javascript
+function Vector(x,y){
+  this.x = x;
+  this.y = y;
+}
+
+Vector.prototype.add = function(v){
+  this.x += v.x;
+  this.y += v.y;
+}
+
+ecs.component("position", Vector);
+ecs.component("velocity", Vector);
+
+ecs.system({
+  components: ["position", "velocity"],
+  every: function(pos,vel){
+    pos.add(vel);
+  }
 });
 ```
 Use "not"-array to exclude entities from the system.
@@ -138,4 +160,17 @@ ecs.system({
 });
 
 ecs.runGroup("somegroup");
+```
+Pass a global argument to system call.
+```javascript
+ecs.system({
+  components: ["position","velocity],
+  every: function(pos,vel,ent,dt){
+    pos.x += vel.x*dt;
+    pos.y += vel.y*dt;
+  }
+});
+
+var dt = 16;
+ecs.run(dt);//typically inside a game loop
 ```
