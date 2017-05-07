@@ -1,13 +1,17 @@
 # Entity Component System
-Ecs is an implementation of entity component system architecture in JavaScript. Ecs architecture helps to keep the logic and the data separated. Live demo: https://rawgit.com/Luftare/Ecs/master/example/index.html
+Ecs is an implementation of entity component system architecture in JavaScript. Ecs architecture helps to keep the logic and the data separated.
 
+## Install
+```javascript
+<script src="Ecs.js"></script>
+```
 ## Examples
 Create an instance of Ecs.
 ```javascript
 var ecs = new Ecs();
 ```
 ### Component
-Create components to hold data.
+Define components to hold data.
 ```javascript
 ecs.component("name", function (first,last) {
   this.first = first;
@@ -58,6 +62,20 @@ var powerup = ecs.entity()
     .add("position",100,100)
     .add("sprite","coin.png");
 ```
+Entities have unique id.
+```javascript
+var ent = ecs.entity();
+console.log(ent.id);
+```
+Entities can be removed.
+```javascript
+var ent = ecs.entity();
+var anotherEnt = ecs.entity();
+
+ecs.removeEntity(ent.id);//call ecs to remove entity by id
+
+anotherEnt.destroy();//same end result as in the above example
+```
 ### System
 Create systems to implement logic. Systems process entities that have all components listed in the "components"-array.
 ```javascript
@@ -91,7 +109,7 @@ ecs.system({
   }
 });
 ```
-Use "not"-array to exclude entities from the system.
+Use "not" array to exclude entities from the system.
 ```javascript
 ecs.system({//sprite rendering system
     components: ["position","sprite"],
@@ -173,4 +191,5 @@ ecs.system({
 
 var dt = 16;
 ecs.run(dt);//typically inside a game loop
+ecs.runGroup("model",dt);//global argument can be used in group run calls, too
 ```
