@@ -1,7 +1,10 @@
 # Entity Component System
 Ecs is an implementation of entity component system architecture in JavaScript. Ecs architecture helps to keep the logic and the data separated.
+## Example: game - How does it come together?
+An entity represents a game object. Entities have only two items: unique id and all components that have been assigned to them. Components describe the behavior of an entity and hold the data to store the state of the entity. Components' main responsibility is to store data and thus they don't have any methods. Systems are responsible for the logic and processing of data. Systems query for entities that have given set of components and process the components' data when systems are run.
 
-## Install
+A good starting point is to keep the systems responsible for single task only as well as having components to store as atomic data as possible. This allows efficient composition of components.
+## How to install
 ```javascript
 <script src="Ecs.js"></script>
 ```
