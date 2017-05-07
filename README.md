@@ -90,7 +90,7 @@ ecs.system({//move entities with velocity
     }
 });
 ```
-Components with constructors can be optionally used although it is against the paradigm of ECS.
+Components with constructors can be optionally used although it is slightly against the paradigm of ECS.
 ```javascript
 function Vector(x,y){
   this.x = x;
