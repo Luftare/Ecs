@@ -164,7 +164,7 @@ ecs.runGroup("somegroup");
 Pass a global argument to system call.
 ```javascript
 ecs.system({
-  components: ["position","velocity],
+  components: ["position","velocity"],
   every: function(pos,vel,ent,dt){
     pos.x += vel.x*dt;
     pos.y += vel.y*dt;
