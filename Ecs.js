@@ -101,7 +101,7 @@ var Ecs = function(){
 	Entity.prototype.add = function(){
 		var name = arguments[0];
 		var args = Array.prototype.slice.call(arguments);
-		this.components[name] = {};
+		// this.components[name] = {};
 		if(!components[name]) throw new Error("Component doesn't exist: "+name)
 		this.components[name] = new (Function.prototype.bind.apply(components[name], args));
 		onAddComponent(this);
@@ -188,7 +188,7 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			if(!this.entities[i]._disabled){
+			if(this.entities[i] && !(this.entities[i]._disabled)){
 				this._currentEntity = this.entities[i];
 				args = this.getArguments(this.entities[i]);
 				if(globalArgs) args.push(globalArgs);
@@ -270,7 +270,7 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			if(!this.entities[i]._disabled){
+			if(this.entities[i] && !this.entities[i]._disabled){
 				args = this.getArguments(this.entities[i]);
 				cb.apply(this.entities[i],args);
 			}
@@ -282,7 +282,7 @@ var Ecs = function(){
 		var i;
 		var len = this.entities.length;
 		for(i = 0; i < len; i++){
-			if(!this.entities[i]._disabled){
+			if(this.entities[i] && !(this.entities[i]._disabled)){
 				if(this.entities[i].id !== this._currentEntity.id){
 					args = this.getArguments(this.entities[i]);
 					cb.apply(this.entities[i],args);
