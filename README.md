@@ -74,7 +74,7 @@ var ent = ecs.entity();
 console.log(ent.id);
 ```
 ### System
-Create systems to implement logic. Systems process entities that have all components listed in the "components"-array.
+Define systems to implement logic. Systems process entities that have all components listed in the `components` array.
 ```javascript
 ecs.system({//move entities with velocity
     components: ["position", "velocity"],
@@ -112,10 +112,10 @@ ecs.system({//sprite rendering system
     components: ["position","sprite"],
     not: ["hidden"],
     pre: function () {//called once before iterating all entities
-      view.clearCanvas();//assume a view module/object
+      ctx.clearRect(0,0,1000,1000);
     },
     every: function (pos, sprite){
-      view.drawImage(sprite.src,pos.x,pos.y);
+      renderModule.drawSprite(sprite.src,pos.x,pos.y);//example function call, renderModule is not part of Ecs...
     }
 });
 ```
