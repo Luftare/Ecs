@@ -64,7 +64,7 @@ Test if entity has a specific component.
 player.has("position");//true
 player.has("velocity");//false
 ```
-Individual components and their data can be accessed through the `components` property of an entity;
+Individual components and their data can be accessed through the `components` property of an entity.
 ```javascript
 player.components.position;//{x:50,y:50}
 ```
@@ -118,7 +118,7 @@ ecs.system({//sprite rendering system
     }
 });
 ```
-Systems have onenter and onleave events for entities joining and leaving.
+Systems have `onenter` and `onleave` events for entities joining and leaving the system as a result of adding or removing components.
 ```javascript
 ecs.system({
     components: ["name","talkingToPhone"],
@@ -153,7 +153,7 @@ ecs.system({
   }
 });
 ```
-Run all systems. You can call the run method inside a game loop.
+Run all systems.
 ```javascript
 ecs.run();
 ```
