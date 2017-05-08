@@ -61,8 +61,8 @@ player.remove("velocity");//remove components from entity
 ```
 Test if entity has a specific component.
 ```javascript   
-console.log(player.has("position"));//true
-console.log(player.has("velocity"));//false
+player.has("position");//true
+player.has("velocity");//false
 ```
 Individual components and their data can be accessed through the `components` property of an entity;
 ```javascript
