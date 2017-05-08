@@ -196,9 +196,9 @@ ecs.system({
   components: ["position","velocity"],
   every: function(pos,vel,ent){
     //"this" refers to the system
-    console.log(this.entities);//array of entities matching this system's components array
+    //this.entities is an array of entities matching this system's components array
     this.iterate(function(entity){
-      //iterating this.entities array    
+      //iterating this.entities array
     });
     this.iterateOthers(function(other){
       //iterating this.entities array except for the entity ("ent") on which the "every" method is called
