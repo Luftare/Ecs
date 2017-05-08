@@ -23,13 +23,14 @@ ecs.component("sprite", function (src){
 });
 
 ecs.component("position", function (x, y){
-    this.x = x || 0;
-    this.y = y || 0;
+    this.x = x;
+    this.y = y;
 });
 
-ecs.component("velocity", function (x, y){
-    this.x = x || 0;
-    this.y = y || 0;
+ecs.component("velocity", function (x, y, max){
+    this.x = x;
+    this.y = y;
+    this.max = max;
 });
 
 ecs.component("input", function (){
@@ -39,8 +40,6 @@ ecs.component("input", function (){
     this.RIGHT = false;
     this.SPACE = false;
 });
-
-ecs.component("age");//age is stored to parameter called "value"
 
 ecs.component("playerControlled");
 
@@ -67,7 +66,7 @@ console.log(player.has("velocity"));//false
 ```
 Individual components and their data can be accessed through the `components` property of an entity;
 ```javascript
-player.components.position;//{x:0,y:0}
+player.components.position;//{x:50,y:50}
 ```
 Entities have unique id.
 ```javascript
