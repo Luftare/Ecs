@@ -1,11 +1,7 @@
 # Entity Component System
 Ecs is an implementation of entity component system architecture in JavaScript. Ecs architecture helps to keep the logic and the data separated.
-## Example: game - How does it come together?
-An entity represents a game object. Entities have only two items: unique id and all components that have been assigned to them. Components describe the behavior of an entity and hold the data to store the state of the entity. Components' main responsibility is to store data and thus they don't have any methods. Systems are responsible for the logic and processing of data. Systems query for entities that have given set of components and process the components' data when systems are run.
-
-A good starting point is to keep the systems responsible for single task only as well as having components to store as atomic data as possible. This allows efficient composition of components.
 ## How to install
-```javascript
+```html
 <script src="Ecs.js"></script>
 ```
 ## Examples
@@ -51,33 +47,32 @@ ecs.component("playerControlled");
 ecs.component("hidden");
 ```
 ### Entity
-Create entities and add or remove components to change their behaviour.
+Entities are simple objects and they have two properties: `id` [int] and `components` [object].
+```javascript
+var player = ecs.entity();
+```
+Add and remove components from entity. Adding and removing of entities can be chained.
 ```javascript
 var player = ecs.entity()
-    .add("name", "John", "Doe")
-    .add("age", 22)
-    .add("sprite", "hero.png")
-    .add("playerControlled")
-    .add("position", 50, 50)
-    .add("velocity",0,0);
-
-var powerup = ecs.entity()
-    .add("position",100,100)
-    .add("sprite","coin.png");
+    .add("position", 50, 50)//add components to entity
+    .add("velocity",0,0)
+    .add("input");
+    
+player.remove("velocity");//remove components from entity
+```
+Test if entity has a specific component.
+```javascript   
+console.log(player.has("position"));//true
+console.log(player.has("velocity"));//false
+```
+Individual components and their data can be accessed through the `components` property of an entity;
+```javascript
+player.components.position;//{x:0,y:0}
 ```
 Entities have unique id.
 ```javascript
 var ent = ecs.entity();
 console.log(ent.id);
-```
-Entities can be removed.
-```javascript
-var ent = ecs.entity();
-var anotherEnt = ecs.entity();
-
-ecs.removeEntity(ent.id);//call ecs to remove entity by id
-
-anotherEnt.destroy();//same end result as in the above example
 ```
 ### System
 Create systems to implement logic. Systems process entities that have all components listed in the "components"-array.
@@ -90,7 +85,7 @@ ecs.system({//move entities with velocity
     }
 });
 ```
-Components with constructors can be optionally used although it is slightly against the paradigm of ECS.
+Components with constructors can be optionally used although it is slightly against the paradigm of Ecs.
 ```javascript
 function Vector(x,y){
   this.x = x;
@@ -108,7 +103,7 @@ ecs.component("velocity", Vector);
 ecs.system({
   components: ["position", "velocity"],
   every: function(pos,vel){
-    pos.add(vel);//Using a method stored to a component
+    pos.add(vel);//calling "add" method from position component which is instanceof Vector
   }
 });
 ```
@@ -195,4 +190,20 @@ ecs.system({
 var dt = 16;
 ecs.run(dt);//typically inside a game loop
 ecs.runGroup("model",dt);//global argument can be used in group run calls, too
+```
+Each system maintain an array of entities matching the components listed in the `components` array.
+```javascript
+ecs.system({
+  components: ["position","velocity"],
+  every: function(pos,vel,ent){
+    //"this" refers to the system
+    console.log(this.entities);//array of entities matching this system's components array
+    this.iterate(function(entity){
+      //iterating this.entities array    
+    });
+    this.iterateOthers(function(other){
+      //iterating this.entities array except for the entity ("ent") on which the "every" method is called
+    });
+  }
+});
 ```
