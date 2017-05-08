@@ -70,8 +70,7 @@ player.components.position;//{x:50,y:50}
 ```
 Entities have unique id.
 ```javascript
-var ent = ecs.entity();
-console.log(ent.id);
+var ent = ecs.entity();//ent.id is a unique integer
 ```
 ### System
 Define systems to implement logic. Systems process entities that have all components listed in the `components` array.
