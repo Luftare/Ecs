@@ -195,6 +195,9 @@ var Ecs = function(){
 				this.every.apply(this,args);
 			}
 		}
+		if(this.post){
+			this.post.apply(this,arguments);
+		}
 		this._currentEntity = null;
 	};
 
