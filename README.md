@@ -49,7 +49,7 @@ Entities store components and unique id.
 ```javascript
 const player = ecs.createEntity();
 ```
-Add and remove components from entity. Adding and removing of entities can be chained.
+Components can be added and removed from entity. Adding and removing of components can be chained.
 ```javascript
 const player = ecs.createEntity()
   .add("position", 50, 50)
@@ -90,15 +90,15 @@ ecs.registerSystem({//move entities with velocity
 ```
 Use `not` array to exclude entities from the system. Below example shows how to render only entities that have position, sprite component and don't have `hidden` component. Another approach would be temporarily removing the sprite or position component.
 ```javascript
-//Assuming there's a canvas and context for the sake of example
+//Assuming there's a canvas and context for the sake of example as well as an object of cached sprites
 ecs.registerSystem({
   has: ["position", "sprite"],
   not: ["hidden"],
-  pre() {/* called once before iterating all entities */
+  pre() {//called once before iterating all entities
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   },
   forEach(position, sprite) {
-    ctx.drawImage(sprites[sprite.name], position.x, position.y );
+    ctx.drawImage(sprites[sprite.name], position.x, position.y);
   }
 });
 ```
