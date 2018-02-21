@@ -49,11 +49,11 @@ function Ecs() {
 	};
 
 	System.prototype = {
-		run(global) {
+		run(globalArg) {
 			this.entities = this.getMatchingEntities();
-			this.pre(global);
-			this.entities.forEach(entity => entity.isActive() && this.forEach(entity, global));
-			this.post(global);
+			this.pre(globalArg);
+			this.entities.forEach(entity => this.forEach(entity, globalArg));
+			this.post(globalArg);
 		},
 		getMatchingEntities() {
 			return entities.filter(entity => entity.isActive() && entity.matches(this));
@@ -106,3 +106,7 @@ function Ecs() {
 
 	return { createEntity, registerComponent, registerSystem, run, runGroup, entities };
 }
+
+try {
+	module.exports = Ecs;
+} catch(err) {}

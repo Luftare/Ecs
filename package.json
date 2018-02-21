@@ -1,0 +1,29 @@
+{
+  "name": "ecs",
+  "version": "1.0.0",
+  "description": "Ecs library",
+  "main": "Ecs.js",
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jasmine"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luftare/Ecs.git"
+  },
+  "keywords": [
+    "Ecs"
+  ],
+  "author": "Luftare",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Luftare/Ecs/issues"
+  },
+  "homepage": "https://github.com/Luftare/Ecs#readme",
+  "devDependencies": {
+    "jasmine": "^3.0.0"
+  }
+}
