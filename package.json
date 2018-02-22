@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Ecs library",
   "main": "Ecs.js",
-  "directories": {
-    "example": "examples",
-    "test": "tests"
-  },
   "scripts": {
     "test": "jasmine"
   },
@@ -14,9 +10,6 @@
     "type": "git",
     "url": "git+https://github.com/Luftare/Ecs.git"
   },
-  "keywords": [
-    "Ecs"
-  ],
   "author": "Luftare",
   "license": "MIT",
   "bugs": {
