@@ -46,11 +46,15 @@ function Ecs() {
 		this.has = has;
 		this.not = not;
 		this.order = order;
+		this.entities = [];
 	};
 
 	System.prototype = {
-		run(globalArg) {
+		enrollEntities() {
 			this.entities = this.getMatchingEntities();
+		},
+		run(globalArg) {
+			this.enrollEntities();
 			this.pre(globalArg);
 			this.entities.forEach(entity => this.forEach(entity, globalArg));
 			this.post(globalArg);
