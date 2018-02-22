@@ -1,6 +1,7 @@
-describe('Ecs', () => {
+describe('When components and systems are defined', () => {
   const Ecs = require('../../Ecs');
   let ecs;
+  let systems = {};
 
   beforeEach(() => {
     ecs = new Ecs();
@@ -23,7 +24,7 @@ describe('Ecs', () => {
 
     ecs.registerComponent('stunned');
 
-    ecs.registerSystem({
+    systems.render = ecs.registerSystem({
       has: ['sprite', 'position'],
       not: ['hidden'],
       forEach(entity, globalArg) {
@@ -31,7 +32,7 @@ describe('Ecs', () => {
       }
     });
 
-    ecs.registerSystem({
+    systems.move = ecs.registerSystem({
       has: ['position', 'velocity'],
       forEach(entity, globalArg) {
         const { position, velocity } = entity;
@@ -41,8 +42,9 @@ describe('Ecs', () => {
     });
   });
 
-  describe('when entity is created', () => {
+  describe('and when entity is created', () => {
     let entity;
+    
     beforeEach(() => {
       entity = ecs.createEntity();
     });
@@ -78,6 +80,7 @@ describe('Ecs', () => {
         ecs.run();
         expect(entity.position.x).toEqual(10);
         expect(entity.position.y).toEqual(10);
+        expect(entity).toBeInSystem(systems.move);
       });
     });
   });
