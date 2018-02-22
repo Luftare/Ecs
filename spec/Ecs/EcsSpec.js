@@ -104,6 +104,19 @@ describe('When components and systems are defined', () => {
           expect(entity.position.y).toEqual(9);
         });
 
+        describe('and entity is destroyed', () => {
+          beforeEach(() => {
+            entity.destroy();
+          });
+
+          it('should be removed from all systems', () => {
+            ecs.run();
+            expect(entity).not.toBeInSystem(systems.noop);
+            expect(entity).not.toBeInSystem(systems.move);
+            expect(entity).not.toBeInSystem(systems.render);
+          });
+        });
+
         describe('and rejected (included in "not" array of system) component is added', () => {
           beforeEach(() => {
             entity.add('stunned');
@@ -190,6 +203,18 @@ describe('When components and systems are defined', () => {
         expect(entities[0].position.y).toEqual(8);
         expect(entities[1].position.x).toEqual(8);
         expect(entities[1].position.y).toEqual(8);
+      });
+
+      describe('and 1 entity is destroyed', () => {
+        beforeEach(() => {
+          entities[1].destroy();
+        });
+
+        it('should be rejected from all systems', () => {
+          expect(systems.noop).toMatchNumberOfEntities(entityCount - 1);
+          expect(systems.move).toMatchNumberOfEntities(1);
+          expect(systems.render).toMatchNumberOfEntities(0);
+        });
       });
 
       describe('and 1 entity receives rejected component', () => {
