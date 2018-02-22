@@ -8,9 +8,9 @@ beforeEach(function () {
           system.enrollEntities();
           return {
             pass: system.entities.includes(entity)
-          }
-        }
-      }
+          };
+        },
+      };
     },
     toMatchNumberOfEntities() {
       return {
@@ -19,9 +19,9 @@ beforeEach(function () {
           system.enrollEntities();
           return {
             pass: system.entities.length === expected
-          }
-        }
-      }
-    }
+          };
+        },
+      };
+    },
   });
 });
