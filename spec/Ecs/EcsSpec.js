@@ -34,17 +34,22 @@ describe('When components and systems are defined', () => {
 
     systems.move = ecs.registerSystem({
       has: ['position', 'velocity'],
+      not: ['stunned'],
       forEach(entity, globalArg) {
         const { position, velocity } = entity;
         position.x += velocity.x;
         position.y += velocity.y;
       }
     });
+
+    systems.noop = ecs.registerSystem({
+      forEach(entity, globalArg) {}
+    });
   });
 
   describe('and when entity is created', () => {
     let entity;
-    
+
     beforeEach(() => {
       entity = ecs.createEntity();
     });
@@ -53,7 +58,14 @@ describe('When components and systems are defined', () => {
       expect(entity.id).toBeDefined();
     });
 
-    describe('when component is added to an entity', () => {
+    it('should be able to enroll to matching systems', () => {
+      ecs.run();
+      expect(entity).toBeInSystem(systems.noop);
+      expect(entity).not.toBeInSystem(systems.move);
+      expect(entity).not.toBeInSystem(systems.render);
+    });
+
+    describe('and when component is added to an entity', () => {
       beforeEach(() => {
         entity.add('position', 5, 5);
       });
@@ -75,13 +87,67 @@ describe('When components and systems are defined', () => {
         expect(entity.position).not.toBeDefined();
       });
 
-      it('should enroll to matching systems', () => {
-        entity.add('velocity', 5, 5);
-        ecs.run();
-        expect(entity.position.x).toEqual(10);
-        expect(entity.position.y).toEqual(10);
-        expect(entity).toBeInSystem(systems.move);
+      describe('and when required components for systems are added', () => {
+        beforeEach(() => {
+          entity.add('velocity', 2, 2);
+        });
+
+        it('systems should be able to enroll the entity', () => {
+          ecs.run();
+          expect(entity).toBeInSystem(systems.noop);
+          expect(entity).toBeInSystem(systems.move);
+          expect(entity).not.toBeInSystem(systems.render);
+          expect(entity.position.x).toEqual(7);
+          expect(entity.position.y).toEqual(7);
+          ecs.run();
+          expect(entity.position.x).toEqual(9);
+          expect(entity.position.y).toEqual(9);
+        });
+
+        describe('and when rejected (included in "not" array of system) component is added', () => {
+          beforeEach(() => {
+            entity.add('stunned');
+          });
+          it('should be excluded from corresponding systems', () => {
+            ecs.run();
+            expect(entity.has('position')).toEqual(true);
+            expect(entity.has('velocity')).toEqual(true);
+            expect(entity).toBeInSystem(systems.noop);
+            expect(entity).not.toBeInSystem(systems.move);
+            expect(entity).not.toBeInSystem(systems.render);
+          });
+        });
+
+        describe('and when required component is removed', () => {
+          beforeEach(() => {
+            entity.remove('velocity');
+          });
+
+          it('should be excluded from non-matching systems', () => {
+            ecs.run();
+            expect(entity).not.toBeInSystem(systems.move);
+            expect(entity).not.toBeInSystem(systems.render);
+            expect(entity.position.x).toEqual(5);
+            expect(entity.position.y).toEqual(5);
+          });
+        });
       });
     });
   });
+
+  describe('and when multiple entities are created', () => {
+    let entities;
+    const entityCount = 10;
+    beforeEach(() => {
+      entities = [...Array(entityCount)].map(() => ecs.createEntity());
+    });
+
+    it('systems should enroll only matchin entities', () => {
+      expect(systems.noop).toMatchNumberOfEntities(entityCount);
+      expect(systems.move).toMatchNumberOfEntities(0);
+      expect(systems.render).toMatchNumberOfEntities(0);
+    });
+
+  });
+
 });
