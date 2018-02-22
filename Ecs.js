@@ -65,6 +65,7 @@ function Ecs() {
 		has = [],
 		not = [],
 		order = 0,
+		group = '',
 	}) {
 		this.mounted = mounted;
 		this.pre = pre;
@@ -76,6 +77,7 @@ function Ecs() {
 		this.not = not;
 		this.order = order;
 		this.entities = [];
+		this.group = group;
 	};
 
 	System.prototype = {
@@ -114,16 +116,16 @@ function Ecs() {
 	};
 
 	function run(globalArg) {
-		systems.forEach(s => s.run(globalArg));
+		systems.forEach(system => system.run(globalArg));
 	};
 
 	function runGroup(name, globalArg) {
-		systems.filter(system => system.group === name).forEach(system => system.run(globalArg));
+		systems.forEach(system => system.group === name && system.run(globalArg));
 	};
 
 	function defaultComponent(v) {
 		this.value = v;
-	}
+	};
 
 	function noop() {};
 

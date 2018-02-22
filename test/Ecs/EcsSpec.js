@@ -25,25 +25,37 @@ describe('When components and systems are defined', () => {
     ecs.registerComponent('stunned');
 
     systems.render = ecs.registerSystem({
+      pre() {
+
+      },
       has: ['sprite', 'position'],
       not: ['hidden'],
       forEach(entity, globalArg) {
 
-      }
+      },
+      group: 'misc'
     });
 
     systems.move = ecs.registerSystem({
       has: ['position', 'velocity'],
       not: ['stunned'],
+      pre() {
+
+      },
       forEach(entity, globalArg) {
         const { position, velocity } = entity;
         position.x += velocity.x;
         position.y += velocity.y;
-      }
+      },
+      group: 'model'
     });
 
     systems.noop = ecs.registerSystem({
-      forEach(entity, globalArg) {}
+      pre() {
+
+      },
+      forEach(entity, globalArg) {},
+      group: 'misc'
     });
   });
 
@@ -60,9 +72,9 @@ describe('When components and systems are defined', () => {
 
     it('should be able to enroll to matching systems', () => {
       ecs.run();
-      expect(entity).toBeInSystem(systems.noop);
-      expect(entity).not.toBeInSystem(systems.move);
-      expect(entity).not.toBeInSystem(systems.render);
+      expect(systems.noop.entities.includes(entity)).toEqual(true);
+      expect(systems.move.entities.includes(entity)).toEqual(false);
+      expect(systems.render.entities.includes(entity)).toEqual(false);
     });
 
     describe('and component is added to an entity', () => {
@@ -89,19 +101,33 @@ describe('When components and systems are defined', () => {
 
       describe('and required components for systems are added', () => {
         beforeEach(() => {
+          entity.position.x = 5;
+          entity.position.y = 5;
           entity.add('velocity', 2, 2);
         });
 
         it('systems should be able to enroll the entity', () => {
+          expect(systems.noop.entities.includes(entity)).toEqual(true);
+          expect(systems.move.entities.includes(entity)).toEqual(true);
+          expect(systems.render.entities.includes(entity)).toEqual(false);
+        });
+
+        it('systems should be able to process enrolled entity', () => {
           ecs.run();
-          expect(entity).toBeInSystem(systems.noop);
-          expect(entity).toBeInSystem(systems.move);
-          expect(entity).not.toBeInSystem(systems.render);
           expect(entity.position.x).toEqual(7);
           expect(entity.position.y).toEqual(7);
-          ecs.run();
-          expect(entity.position.x).toEqual(9);
-          expect(entity.position.y).toEqual(9);
+        });
+
+        it('systems should not be run if group does not match', () => {
+          ecs.runGroup('misc');
+          expect(entity.position.x).toEqual(5);
+          expect(entity.position.y).toEqual(5);
+        });
+
+        it('systems should run if group matches', () => {
+          ecs.runGroup('model');
+          expect(entity.position.x).toEqual(7);
+          expect(entity.position.y).toEqual(7);
         });
 
         describe('and entity is destroyed', () => {
@@ -111,9 +137,9 @@ describe('When components and systems are defined', () => {
 
           it('should be removed from all systems', () => {
             ecs.run();
-            expect(entity).not.toBeInSystem(systems.noop);
-            expect(entity).not.toBeInSystem(systems.move);
-            expect(entity).not.toBeInSystem(systems.render);
+            expect(systems.noop.entities.includes(entity)).toEqual(false);
+            expect(systems.move.entities.includes(entity)).toEqual(false);
+            expect(systems.render.entities.includes(entity)).toEqual(false);
           });
         });
 
@@ -125,9 +151,9 @@ describe('When components and systems are defined', () => {
             ecs.run();
             expect(entity.has('position')).toEqual(true);
             expect(entity.has('velocity')).toEqual(true);
-            expect(entity).toBeInSystem(systems.noop);
-            expect(entity).not.toBeInSystem(systems.move);
-            expect(entity).not.toBeInSystem(systems.render);
+            expect(systems.noop.entities.includes(entity)).toEqual(true);
+            expect(systems.move.entities.includes(entity)).toEqual(false);
+            expect(systems.render.entities.includes(entity)).toEqual(false);
           });
         });
 
@@ -138,8 +164,10 @@ describe('When components and systems are defined', () => {
 
           it('should be excluded from non-matching systems', () => {
             ecs.run();
-            expect(entity).not.toBeInSystem(systems.move);
-            expect(entity).not.toBeInSystem(systems.render);
+
+            expect(systems.noop.entities.includes(entity)).toEqual(true);
+            expect(systems.move.entities.includes(entity)).toEqual(false);
+            expect(systems.render.entities.includes(entity)).toEqual(false);
             expect(entity.position.x).toEqual(5);
             expect(entity.position.y).toEqual(5);
           });
@@ -187,12 +215,12 @@ describe('When components and systems are defined', () => {
         expect(systems.move.entities.length).toEqual(2);
         expect(systems.render.entities.length).toEqual(0);
         entities.forEach((entity, i) => {
-          expect(entity).not.toBeInSystem(systems.render);
-          expect(entity).toBeInSystem(systems.noop);
+          expect(systems.noop.entities.includes(entity)).toEqual(true);
+          expect(systems.render.entities.includes(entity)).toEqual(false);
           if(i < 2) {
-            expect(entity).toBeInSystem(systems.move);
+            expect(systems.move.entities.includes(entity)).toEqual(true);
           } else {
-            expect(entity).not.toBeInSystem(systems.move);
+            expect(systems.move.entities.includes(entity)).toEqual(false);
           }
         });
       });
@@ -223,7 +251,7 @@ describe('When components and systems are defined', () => {
         });
 
         it('should be rejected from corresponding system', () => {
-          expect(entities[0]).not.toBeInSystem(systems.move);
+          expect(systems.move.entities.includes(entities[0])).toEqual(false);
           expect(systems.move.entities.length).toEqual(1);
         });
       });
