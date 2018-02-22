@@ -5,9 +5,9 @@ beforeEach(function () {
         compare(actual, expected) {
           const entity = actual;
           const system = expected;
-          system.enrollEntities();
+          const entities = system.getMatchingEntities();
           return {
-            pass: system.entities.includes(entity)
+            pass: entities.includes(entity)
           };
         },
       };
@@ -16,9 +16,9 @@ beforeEach(function () {
       return {
         compare(actual, expected) {
           const system = actual;
-          system.enrollEntities();
+          const entities = system.getMatchingEntities();
           return {
-            pass: system.entities.length === expected
+            pass: entities.length === expected
           };
         },
       };
