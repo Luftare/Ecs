@@ -8,22 +8,47 @@ function Ecs() {
 
 	Entity.prototype = {
 		add(name, ...args) {
+			const preSystems = this.getMatchingSystems();
 			this[name] = new components[name](...args);
+			this.handleEnrollToSystems(preSystems);
 			return this;
 		},
+		handleEnrollToSystems(preSystems = []) {
+			const postSystems = this.getMatchingSystems();
+			const enteredSystems = postSystems.filter(system => !preSystems.includes(system));
+			const leftSystems = preSystems.filter(system => !postSystems.includes(system));
+			this.updateSystemsEntityLists(leftSystems, enteredSystems);
+		},
+		updateSystemsEntityLists(left, entered) {
+			entered.forEach(system => {
+				system.entities.push(this);
+				system.enter(this);
+			});
+			left.forEach(system => {
+				system.entities = system.entities.filter(entity => entity !== this);
+				system.leave(this);
+			});
+		},
 		remove(name) {
+			const preSystems = this.getMatchingSystems();
 			delete this[name];
+			this.handleEnrollToSystems(preSystems);
 			return this;
 		},
 		has(...keys) {
 			return keys.every(key => !!this[key]);
 		},
 		destroy() {
+			const preSystems = this.getMatchingSystems();
 			this._garbage = true;
+			this.updateSystemsEntityLists(preSystems, []);
 			entities = entities.filter(entity => entity !== this);
 		},
 		matches(system) {
 			return system.has.every(key => this.has(key)) && system.not.every(key => !this.has(key));
+		},
+		getMatchingSystems() {
+			return systems.filter(system => this.matches(system));
 		},
 		isActive() {
 			return !this._garbage;
@@ -35,6 +60,8 @@ function Ecs() {
 		pre = noop,
 		post = noop,
 		forEach = noop,
+		enter = noop,
+		leave = noop,
 		has = [],
 		not = [],
 		order = 0,
@@ -42,6 +69,8 @@ function Ecs() {
 		this.mounted = mounted;
 		this.pre = pre;
 		this.post = post;
+		this.enter = enter;
+		this.leave = leave;
 		this.forEach = forEach;
 		this.has = has;
 		this.not = not;
@@ -50,20 +79,13 @@ function Ecs() {
 	};
 
 	System.prototype = {
-		enrollEntities() {
-			this.entities = this.getMatchingEntities();
-		},
 		run(globalArg) {
-			this.enrollEntities();
 			this.pre(globalArg);
 			this.entities.forEach(entity => this.forEach(entity, globalArg));
 			this.post(globalArg);
 		},
 		getMatchingEntities() {
 			return entities.filter(entity => entity.isActive() && entity.matches(this));
-		},
-		getOtherEntities(currentEntity) {
-			return entities.filter(entity => entity.isActive() && entity !== currentEntity);
 		}
 	};
 
@@ -74,6 +96,7 @@ function Ecs() {
 			value: idCounter++
 		});
 		entities.push(entity);
+		entity.handleEnrollToSystems();
 		return entity;
 	};
 
@@ -93,10 +116,6 @@ function Ecs() {
 	function run(globalArg) {
 		systems.forEach(s => s.run(globalArg));
 	};
-
-	function getMatchingSystems(entity) {
-		return systems.filter(system => entity.matches(system));
-	}
 
 	function runGroup(name, globalArg) {
 		systems.filter(system => system.group === name).forEach(system => system.run(globalArg));
