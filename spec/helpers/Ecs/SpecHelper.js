@@ -11,6 +11,17 @@ beforeEach(function () {
           }
         }
       }
+    },
+    toMatchNumberOfEntities() {
+      return {
+        compare(actual, expected) {
+          const system = actual;
+          system.enrollEntities();
+          return {
+            pass: system.entities.length === expected
+          }
+        }
+      }
     }
   });
 });
