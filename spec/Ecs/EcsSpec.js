@@ -156,9 +156,9 @@ describe('When components and systems are defined', () => {
     });
 
     it('systems should enroll only matching entities', () => {
-      expect(systems.noop).toMatchNumberOfEntities(entityCount);
-      expect(systems.move).toMatchNumberOfEntities(0);
-      expect(systems.render).toMatchNumberOfEntities(0);
+      expect(systems.noop.entities.length).toEqual(entityCount);
+      expect(systems.move.entities.length).toEqual(0);
+      expect(systems.render.entities.length).toEqual(0);
     });
 
     describe('and 2 entities receive 2 components in chain', () => {
@@ -183,9 +183,9 @@ describe('When components and systems are defined', () => {
       });
 
       it('systems should enroll only matching entities', () => {
-        expect(systems.noop).toMatchNumberOfEntities(entityCount);
-        expect(systems.move).toMatchNumberOfEntities(2);
-        expect(systems.render).toMatchNumberOfEntities(0);
+        expect(systems.noop.entities.length).toEqual(entityCount);
+        expect(systems.move.entities.length).toEqual(2);
+        expect(systems.render.entities.length).toEqual(0);
         entities.forEach((entity, i) => {
           expect(entity).not.toBeInSystem(systems.render);
           expect(entity).toBeInSystem(systems.noop);
@@ -211,9 +211,9 @@ describe('When components and systems are defined', () => {
         });
 
         it('should be rejected from all systems', () => {
-          expect(systems.noop).toMatchNumberOfEntities(entityCount - 1);
-          expect(systems.move).toMatchNumberOfEntities(1);
-          expect(systems.render).toMatchNumberOfEntities(0);
+          expect(systems.noop.entities.length).toEqual(entityCount - 1);
+          expect(systems.move.entities.length).toEqual(1);
+          expect(systems.render.entities.length).toEqual(0);
         });
       });
 
@@ -224,7 +224,7 @@ describe('When components and systems are defined', () => {
 
         it('should be rejected from corresponding system', () => {
           expect(entities[0]).not.toBeInSystem(systems.move);
-          expect(systems.move).toMatchNumberOfEntities(1);
+          expect(systems.move.entities.length).toEqual(1);
         });
       });
     });
