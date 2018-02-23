@@ -24,6 +24,8 @@ const view = {
   ctx: document.querySelector('canvas').getContext("2d"),
 };
 
+window.onload = loop;
+
 //components
 ecs.registerComponent(comps.POSITION, function(x = 0, y = 0) {
   this.x = x;
@@ -63,8 +65,7 @@ ecs.registerSystem({//move entities with velocity
   pre(dt) {
 
   },
-  forEach(entity, dt){//iterates all entities with position and velocity component
-    const { position, velocity } = entity;
+  forEach({ position, velocity }, dt){//iterates all entities with position and velocity component
     position.x += velocity.x * dt;
     position.y += velocity.y * dt;
   }
@@ -74,32 +75,16 @@ ecs.registerSystem({
   group: groups.GRAPHICS,
   has: [comps.POSITION, comps.RECTANGLE, comps.COLOR],
   not: [comps.HIDDEN],
-  pre(view) {
-    view.canvas.width = view.canvas.width;
+  pre({ canvas }) {
+    canvas.width = canvas.width;
   },
-  forEach(entity, view) {
-    const { x, y } = entity.position;
-    const { width, height } = entity.rectangle;
-    const { ctx } = view;
-    ctx.fillStyle = entity.color.value;
+  forEach({ position, rectangle, color }, { ctx }) {
+    const { x, y } = position;
+    const { width, height } = rectangle;
+    ctx.fillStyle = color.value;
     ctx.fillRect(x, y, width, height);
   }
 })
-
-ecs.registerSystem({
-  group: groups.MODEL,
-  has: [comps.INPUT, comps.PLAYER_CONTROLLED],
-  mounted() {//called once system is created
-    document.addEventListener("keydown", e => {//keydown event
-      const key = keyCodeToName[e.keyCode];
-      //TODO: DO something
-    });
-
-    document.addEventListener("keyup",function (e) {//keyup event
-
-    });
-  }
-});
 
 function createMeteorite() {
   ecs.createEntity()
@@ -118,12 +103,10 @@ function createSnowFlake() {
 }
 
 function loop() {
-  createSnowFlake()
-  Math.random() > 0.9 && createMeteorite()
   const dt = 0.016;
+  createSnowFlake();
+  Math.random() > 0.9 && createMeteorite();
   ecs.runGroup(groups.MODEL, dt);
   ecs.runGroup(groups.GRAPHICS, view);
   requestAnimationFrame(loop);
 }
-
-loop();
