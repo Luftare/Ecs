@@ -78,13 +78,14 @@ const player = ecs.createEntity();
 console.log(player.id);//--> 1
 ```
 ### System
-Register systems to implement logic. Systems process entities that match their required components. `has` is an array listing all required components for an entity to be enrolled to the system. `not`is an array that can be used to exclude those entities that have any of the components listed in the `not`array.
+Register systems to implement logic. Systems process entities that match their required components. `has` is an array defining all required components for an entity in order to be enrolled to the system. `not`is an array that can be used to exclude entities that have any of the components listed in the `not`array.
 ```javascript
 ecs.registerSystem({//move entities with velocity
   components: ["position", "velocity"],
-  forEach(position, velocity) {//iterates all entities with position and velocity component
-    pos.x += vel.x;
-    pos.y += vel.y;
+  forEach(entity) {//iterates all entities with position and velocity component
+    const { position, velocity } = entity;
+    position.x += velocity.x;
+    position.y += velocity.y;
   }
 });
 ```
@@ -94,17 +95,37 @@ Use `not` array to exclude entities from the system. Below example shows how to 
 ecs.registerSystem({
   has: ["position", "sprite"],
   not: ["hidden"],
-  pre() {//called once before iterating all entities
+  pre({ ctx, canvas }) {//called once before iterating all entities
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   },
-  forEach(position, sprite) {
-    ctx.drawImage(sprites[sprite.name], position.x, position.y);
+  forEach(entity, { cxt }) {
+    const { x, y } = entity.position;
+    const { name } = entity.sprite
+    ctx.drawImage(sprites[name], x, y);
   }
 });
 ```
-Run all systems.
+Run all systems. `run` method will iterate and run all registered systems. Each system will first call `method`, then iterate all enrolled entities and finally systems' `post` method is called.
 ```javascript
+ecs.registerSystem({
+  pre() {
+    console.log('Called first.');
+  },
+  forEach() {
+    console.log('Iterating all enrolled entities after pre method of this system is run...');
+  },
+  post() {
+    console.log('Called after all enrolled entities of this system are iterated.');
+  }
+});
+
 ecs.run();
+//--> Called first.
+//--> Iterating all enrolled entities after pre method of this system is run...
+//--> Iterating all enrolled entities after pre method of this system is run...
+//--> Iterating all enrolled entities after pre method of this system is run...
+//...
+//--> Called after all enrolled entities of this system are iterated.
 ```
 Systems can be run in groups and system within a group can be ordered.
 ```javascript
@@ -137,23 +158,57 @@ ecs.runGroup("model");
 ecs.runGroup("graphics");
 //--> Rendering a new frame...
 ```
-Pass a global argument to system call.
+Pass a global argument to system call. Global argument is available in methods: `pre`, `forEach` and `post`.
+```javascript
+ecs.registerSystem({
+  pre(globalArgument) {
+    console.log(globalArgument);//--> Hello!
+  },
+  forEach(entity, globalArgument) {
+    console.log(globalArgument);//--> Hello!
+  },
+  post(globalArgument) {
+    console.log(globalArgument);//--> Hello!
+  },
+});
+
+ecs.run('Hello!');
+```
+Global argument can be used in group run calls, too.
 ```javascript
 ecs.registerSystem({
   has: ["position", "velocity"],
-  forEach(position, velocity, entity, dt) {
+  forEach({ position, velocity }, dt) {
     position.x += velocity.x * dt;
     position.y += velocity.y * dt;
   },
   group: "model",
 });
 
-//Within a game loop...
-const dt = 16;
-ecs.run(dt);//delta time value is typically calculated inside a game loop
-ecs.runGroup("model", dt);//global argument can be used in group run calls, too
+ecs.registerSystem({
+  has: ["position", "size", "color"],
+  pre({ canvas }) {
+    canvas.width = canvas.width;//dirty way of cleaning canvas
+  },
+  forEach({ position, size }, { ctx }) {
+    const { x, y } = position
+    const { width, height } = size;
+    ctx.fillRect(x, y, width, height);
+  },
+  group: "graphics",
+});
+
+const deltaTimeInMs = 16;
+const renderContext = {
+  canvas: document.querySelector('canvas'),
+  ctx: document.querySelector('canvas').getContext('2d'),
+};
+
+//Later in code within a game loop etc.
+ecs.runGroup('model', deltaTimeInMs);
+ecs.runGroup('graphics', renderContext);
 ```
-## General findings and misc
+## Tips for the usage
 Components with constructors can be optionally used although it is slightly against the paradigm of Ecs.
 ```javascript
 function Vector(x, y) {
@@ -171,8 +226,8 @@ ecs.registerComponent("velocity", Vector);
 
 ecs.registerSystem({
   components: ["position", "velocity"],
-  forEach(pos, vel, entity) {
-    pos.add(vel);//calling "add" method from position component which is instanceof Vector
+  forEach({ position, velocity }) {
+    position.add(velocity);//calling "add" method from position component which is instanceof Vector
   }
 });
 ```
