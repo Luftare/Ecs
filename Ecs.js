@@ -50,9 +50,6 @@ function Ecs() {
 		getMatchingSystems() {
 			return systems.filter(system => this.matches(system));
 		},
-		isActive() {
-			return !this._garbage;
-		}
 	};
 
 	function System({
@@ -86,9 +83,6 @@ function Ecs() {
 			this.entities.forEach(entity => this.forEach(entity, globalArg));
 			this.post(globalArg);
 		},
-		getMatchingEntities() {
-			return entities.filter(entity => entity.isActive() && entity.matches(this));
-		}
 	};
 
 	function createEntity() {
