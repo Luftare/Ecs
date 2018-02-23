@@ -4,13 +4,13 @@ const groups = {
   GRAPHICS: 'GRAPHICS',
 };
 const comps = {
-  POSITION: 'POSITION',
-  VELOCITY: 'VELOCITY',
-  RECTANGLE: 'RECTANGLE',
-  INPUT: 'INPUT',
-  PLAYER_CONTROLLED: 'PLAYER_CONTROLLED',
-  AI_CONTROLLED: 'AI_CONTROLLED',
-  COLOR: 'COLOR',
+  POSITION: 'position',
+  VELOCITY: 'velocity',
+  RECTANGLE: 'rectangle',
+  INPUT: 'input',
+  PLAYER_CONTROLLED: 'playerControlled',
+  AI_CONTROLLED: 'aiControlled',
+  COLOR: 'color',
 };
 const keyCodeToName = {//translate keyCode to key string
   "32": "SPACE",
@@ -52,6 +52,8 @@ ecs.registerComponent(comps.PLAYER_CONTROLLED);
 
 ecs.registerComponent(comps.COLOR);
 
+ecs.registerComponent(comps.HIDDEN);
+
 ecs.registerComponent(comps.AI_CONTROLLED);
 
 //systems
@@ -70,14 +72,17 @@ ecs.registerSystem({//move entities with velocity
 
 ecs.registerSystem({
   group: groups.GRAPHICS,
-  has: [comps.POSITION],
+  has: [comps.POSITION, comps.RECTANGLE, comps.COLOR],
+  not: [comps.HIDDEN],
   pre(view) {
     view.canvas.width = view.canvas.width;
   },
   forEach(entity, view) {
     const { x, y } = entity.position;
+    const { width, height } = entity.rectangle;
     const { ctx } = view;
-    ctx.fillRect(x, y, 10, 10);
+    ctx.fillStyle = entity.color.value;
+    ctx.fillRect(x, y, width, height);
   }
 })
 
@@ -96,9 +101,25 @@ ecs.registerSystem({
   }
 });
 
-ecs.createEntity().add(comps.POSITION, 50, 50);
+function createMeteorite() {
+  ecs.createEntity()
+    .add(comps.POSITION, Math.random() * view.canvas.width, 0)
+    .add(comps.VELOCITY, 50, 50)
+    .add(comps.RECTANGLE, 20, 20)
+    .add(comps.COLOR, "orange");
+}
+
+function createSnowFlake() {
+  ecs.createEntity()
+    .add(comps.POSITION, Math.random() * view.canvas.width * 2 - view.canvas.width, 0)
+    .add(comps.VELOCITY, 0, 5)
+    .add(comps.RECTANGLE, 1, 2)
+    .add(comps.COLOR, "white");
+}
 
 function loop() {
+  createSnowFlake()
+  Math.random() > 0.9 && createMeteorite()
   const dt = 0.016;
   ecs.runGroup(groups.MODEL, dt);
   ecs.runGroup(groups.GRAPHICS, view);
