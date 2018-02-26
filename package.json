@@ -4,7 +4,7 @@
   "description": "Ecs library",
   "main": "Ecs.js",
   "scripts": {
-    "test": "istanbul cover --include-all-sources jasmine-node test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -16,8 +16,14 @@
     "url": "https://github.com/Luftare/Ecs/issues"
   },
   "homepage": "https://github.com/Luftare/Ecs#readme",
-  "dependencies": {
-    "istanbul": "^0.4.5",
-    "jasmine-node": "^1.14.5"
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^22.4.2"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "Ecs.js"
+    ]
   }
 }
