@@ -13,6 +13,15 @@ function Ecs() {
 			this.handleEnrollToSystems(preSystems);
 			return this;
 		},
+		addMultiple(...calls) {
+			const preSystems = this.getMatchingSystems();
+			calls.forEach(call => {
+				const [name, ...args] = call;
+				this[name] = new components[name](...args);
+			});
+			this.handleEnrollToSystems(preSystems);
+			return this;
+		},
 		handleEnrollToSystems(preSystems = []) {
 			const postSystems = this.getMatchingSystems();
 			const enteredSystems = postSystems.filter(system => !preSystems.includes(system));
