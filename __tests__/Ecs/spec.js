@@ -107,6 +107,20 @@ describe('When components and systems are defined', () => {
       expect(entity.has('hidden')).toEqual(true);
     });
 
+    it('should be able to remove multiple components', () => {
+      entity.addMultiple(
+        ['position', 5, 5],
+        ['velocity', 3, 3],
+        ['stunned'],
+        ['hidden']
+      );
+      entity.removeMultiple('position', 'velocity', 'stunned');
+      expect(entity.has('position')).toEqual(false);
+      expect(entity.has('velocity')).toEqual(false);
+      expect(entity.has('stunned')).toEqual(false);
+      expect(entity.has('hidden')).toEqual(true);
+    });
+
     it('should be able to enroll to matching systems', () => {
       ecs.run();
       expect(systems.noop.entities.includes(entity)).toEqual(true);
