@@ -2,9 +2,17 @@ describe('When components and systems are defined', () => {
   const Ecs = require('../../Ecs');
   let ecs;
   let systems = {};
+  let moveSystemPreMock;
+  let renderSystemPreMock;
+  let noopSystemPreMock;
+  let moveSystemForEachMock;
 
   beforeEach(() => {
     ecs = new Ecs();
+    moveSystemPreMock = jest.fn();
+    renderSystemPreMock = jest.fn();
+    noopSystemPreMock = jest.fn();
+    moveSystemForEachMock = jest.fn();
 
     ecs.registerComponent('position', function(x = 0, y = 0) {
       this.x = x;
@@ -25,8 +33,8 @@ describe('When components and systems are defined', () => {
     ecs.registerComponent('stunned');
 
     systems.render = ecs.registerSystem({
-      pre() {
-
+      pre(globalArg) {
+        renderSystemPreMock(globalArg);
       },
       has: ['sprite', 'position'],
       not: ['hidden'],
@@ -39,24 +47,40 @@ describe('When components and systems are defined', () => {
     systems.move = ecs.registerSystem({
       has: ['position', 'velocity'],
       not: ['stunned'],
-      pre() {
-
+      pre(globalArg) {
+        moveSystemPreMock(globalArg);
       },
       forEach(entity, globalArg) {
         const { position, velocity } = entity;
         position.x += velocity.x;
         position.y += velocity.y;
+        moveSystemForEachMock(entity, globalArg);
       },
       group: 'model'
     });
 
     systems.noop = ecs.registerSystem({
-      pre() {
-
+      pre(globalArg) {
+        noopSystemPreMock(globalArg);
       },
       forEach(entity, globalArg) {},
       group: 'misc'
     });
+  });
+
+  it('all systems should run when ecs.run is called', () => {
+    ecs.run();
+    expect(moveSystemPreMock.mock.calls.length).toEqual(1);
+    expect(noopSystemPreMock.mock.calls.length).toEqual(1);
+    expect(renderSystemPreMock.mock.calls.length).toEqual(1);
+  });
+
+  it('systems should forward global argument', () => {
+    const argument = 'test argument';
+    ecs.run(argument);
+    expect(moveSystemPreMock.mock.calls[0][0]).toEqual(argument);
+    expect(noopSystemPreMock.mock.calls[0][0]).toEqual(argument);
+    expect(renderSystemPreMock.mock.calls[0][0]).toEqual(argument);
   });
 
   describe('and entity is created', () => {
@@ -114,6 +138,7 @@ describe('When components and systems are defined', () => {
 
         it('systems should be able to process enrolled entity', () => {
           ecs.run();
+          expect(moveSystemPreMock.mock.calls.length).toEqual(1);
           expect(entity.position.x).toEqual(7);
           expect(entity.position.y).toEqual(7);
         });
@@ -193,6 +218,11 @@ describe('When components and systems are defined', () => {
       beforeEach(() => {
         entities[0].add('position', 5, 5).add('velocity', 3, 3);
         entities[1].add('position', 5, 5).add('velocity', 3, 3);
+      });
+
+      it('systems should be able to iterate matching entities', () => {
+        ecs.run();
+        expect(moveSystemForEachMock.mock.calls.length).toEqual(2);
       });
 
       it('entities should store component data', () => {
