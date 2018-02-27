@@ -2,7 +2,7 @@
 Ecs is a lightweight JS library that can be used to implement an entity-component-system architecture for games and other similar applications. Ecs doesn't try to be a game engine but it can be used in tandem with other libraries to build complete games. The core idea of Ecs is to enable better `composition over inheritance` thus helping you to focus on developing different behaviours and then composing the behaviours to create the actual game objects.
 ## How to install
 ```html
-<script src="Ecs.js"></script>
+<script src='Ecs.js'></script>
 ```
 ## Examples
 Create an instance of Ecs. There can be multiple parallel instances of Ecs existing at once.
@@ -12,27 +12,27 @@ const ecs = new Ecs();
 ### Component
 Define components to hold data.
 ```javascript
-ecs.registerComponent("name", function(first, last) {
+ecs.registerComponent('name', function(first, last) {
   this.first = first;
   this.last = last;
 });
 
-ecs.registerComponent("sprite", function(src) {
+ecs.registerComponent('sprite', function(src) {
   this.src = src;
 });
 
-ecs.registerComponent("position", function(x, y) {
+ecs.registerComponent('position', function(x, y) {
   this.x = x;
   this.y = y;
 });
 
-ecs.registerComponent("velocity", function(x, y, max) {
+ecs.registerComponent('velocity', function(x, y, max) {
   this.x = x;
   this.y = y;
   this.max = max;
 });
 
-ecs.registerComponent("input", function() {
+ecs.registerComponent('input', function() {
   this.UP = false;
   this.DOWN = false;
   this.LEFT = false;
@@ -40,9 +40,9 @@ ecs.registerComponent("input", function() {
   this.SPACE = false;
 });
 
-ecs.registerComponent("playerControlled");
+ecs.registerComponent('playerControlled');
 
-ecs.registerComponent("hidden");
+ecs.registerComponent('hidden');
 ```
 ### Entity
 Entities store components and unique id.
@@ -52,20 +52,20 @@ const player = ecs.createEntity();
 Components can be added and removed from entity. Adding and removing of components can be chained.
 ```javascript
 const player = ecs.createEntity()
-  .add("position", 50, 50)
-  .add("velocity",0 ,0)
-  .add("input");
+  .add('position', 50, 50)
+  .add('velocity', 0, 0)
+  .add('input');
 
 //later in code
-player.remove("velocity");
+player.remove('velocity');
 ```
 An entity can test existence of a component.
 ```javascript   
 const player = ecs.createEntity()
-  .add("position", 50, 50);
+  .add('position', 50, 50);
 
-player.has("position");//true
-player.has("velocity");//false
+player.has('position');//true
+player.has('velocity');//false
 ```
 Individual components and their properties can be accessed directly as a property of the entity.
 ```javascript
@@ -81,7 +81,7 @@ console.log(player.id);//--> 1
 Register systems to implement logic. Systems process entities that match their required components. `has` is an array defining all required components for an entity in order to be enrolled to the system. `not`is an array that can be used to exclude entities that have any of the components listed in the `not`array.
 ```javascript
 ecs.registerSystem({//move entities with velocity
-  components: ["position", "velocity"],
+  components: ['position', 'velocity'],
   forEach(entity) {//iterates all entities with position and velocity component
     const { position, velocity } = entity;
     position.x += velocity.x;
@@ -93,8 +93,8 @@ Use `not` array to exclude entities from the system. Below example shows how to 
 ```javascript
 //Assuming there's a canvas and context for the sake of example as well as an object of cached sprites
 ecs.registerSystem({
-  has: ["position", "sprite"],
-  not: ["hidden"],
+  has: ['position', 'sprite'],
+  not: ['hidden'],
   pre({ ctx, canvas }) {//called once before iterating all entities
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   },
@@ -131,31 +131,31 @@ Systems can be run in groups and system within a group can be ordered.
 ```javascript
 ecs.registerSystem({
   pre() {
-    console.log("Calculating physics...");
+    console.log('Calculating physics...');
   },
   order: 1,
-  group: "model"
+  group: 'model'
 });
 
 ecs.registerSystem({
   pre() {
-    console.log("Handling player input...");
+    console.log('Handling player input...');
   },
   order: 0,
-  group: "model"
+  group: 'model'
 });
 
 ecs.registerSystem({
   pre() {
-    console.log("Rendering a new frame...");
+    console.log('Rendering a new frame...');
   },
-  group: "graphics"
+  group: 'graphics'
 });
 
-ecs.runGroup("model");
+ecs.runGroup('model');
 //--> Handling player input...
 //--> Calculating physics...
-ecs.runGroup("graphics");
+ecs.runGroup('graphics');
 //--> Rendering a new frame...
 ```
 Pass a global argument to system call. Global argument is available in methods: `pre`, `forEach` and `post`.
@@ -165,7 +165,7 @@ ecs.registerSystem({
     console.log(globalArgument);//--> Hello!
   },
   forEach(entity, globalArgument) {
-    console.log(globalArgument);//--> Hello!
+    console.log(globalArgument);//--> Hello! (for each entity enrolled to this system)
   },
   post(globalArgument) {
     console.log(globalArgument);//--> Hello!
@@ -177,16 +177,16 @@ ecs.run('Hello!');
 Global argument can be used in group run calls, too.
 ```javascript
 ecs.registerSystem({
-  has: ["position", "velocity"],
+  has: ['position', 'velocity'],
   forEach({ position, velocity }, dt) {
     position.x += velocity.x * dt;
     position.y += velocity.y * dt;
   },
-  group: "model",
+  group: 'model',
 });
 
 ecs.registerSystem({
-  has: ["position", "size", "color"],
+  has: ['position', 'size', 'color'],
   pre({ canvas }) {
     canvas.width = canvas.width;//dirty way of cleaning canvas
   },
@@ -195,7 +195,7 @@ ecs.registerSystem({
     const { width, height } = size;
     ctx.fillRect(x, y, width, height);
   },
-  group: "graphics",
+  group: 'graphics',
 });
 
 const deltaTimeInMs = 16;
@@ -213,9 +213,9 @@ Entities have handy `addMultiple` method that produces the same end result as ch
 ```javascript
 const player = ecs.createEntity()
   .addMultiple(
-    ["position", 50, 50],
-    ["velocity", 0, 0],
-    ["input"]
+    ['position', 50, 50],
+    ['velocity', 0, 0],
+    ['input']
   );
 ```
 Components should be as atomic as possible. This increases the reusability of the component. However, sometimes the scope of the game might be so clear that for the sake of simplicity closely related components might be merged together. Here's an example where components are separated on atomic level:
@@ -260,13 +260,13 @@ Vector.prototype.add = function(v) {
   this.y += v.y;
 }
 
-ecs.registerComponent("position", Vector);
-ecs.registerComponent("velocity", Vector);
+ecs.registerComponent('position', Vector);
+ecs.registerComponent('velocity', Vector);
 
 ecs.registerSystem({
-  components: ["position", "velocity"],
+  components: ['position', 'velocity'],
   forEach({ position, velocity }) {
-    position.add(velocity);//calling "add" method from position component which is instanceof Vector
+    position.add(velocity);//calling 'add' method from position component which is instanceof Vector
   }
 });
 ```
