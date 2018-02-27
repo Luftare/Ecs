@@ -209,7 +209,7 @@ ecs.runGroup('model', deltaTimeInMs);
 ecs.runGroup('graphics', renderContext);
 ```
 ## Optimization and tips
-Entities have handy `addMultiple` method that produces the same end result as chaining separate `add` methods. The difference is that `addMultiple` method updates system enrollment only once whereas multiple `add` calls update system enrollments on every call which can be expensive operation.
+Every time the collection of components of an entity changes, all systems will iterate and see if the component should be added to the system or wether the component should be removed from a system it doesn't match anymore. Entities have `addMultiple` method that produces the same end result as chaining separate `add` methods. The difference is that `addMultiple` method updates system enrollment only once whereas multiple `add` calls update system enrollments on every call which can be expensive operation.
 ```javascript
 const player = ecs.createEntity()
   .addMultiple(
@@ -217,6 +217,11 @@ const player = ecs.createEntity()
     ['velocity', 0, 0],
     ['input']
   );
+```
+Removing of multiple components can be optimized with `removeMultiple` method, which follows the same logic as `addMultiple` method.
+```javascript
+const player = ecs.createEntity()
+  .removeMultiple('position', 'velocity', 'input');
 ```
 Components should be as atomic as possible. This increases the reusability of the component. However, sometimes the scope of the game might be so clear that for the sake of simplicity closely related components might be merged together. Here's an example where components are separated on atomic level:
 ```javascript
