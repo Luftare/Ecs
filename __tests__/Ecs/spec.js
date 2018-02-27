@@ -94,6 +94,19 @@ describe('When components and systems are defined', () => {
       expect(entity.id).toBeDefined();
     });
 
+    it('should be able to receive multiple components', () => {
+      entity.addMultiple(
+        ['position', 5, 5],
+        ['velocity', 3, 3],
+        ['stunned'],
+        ['hidden']
+      );
+      expect(entity.has('position')).toEqual(true);
+      expect(entity.has('velocity')).toEqual(true);
+      expect(entity.has('stunned')).toEqual(true);
+      expect(entity.has('hidden')).toEqual(true);
+    });
+
     it('should be able to enroll to matching systems', () => {
       ecs.run();
       expect(systems.noop.entities.includes(entity)).toEqual(true);
