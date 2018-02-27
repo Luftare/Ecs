@@ -22,6 +22,14 @@ function Ecs() {
 			this.handleEnrollToSystems(preSystems);
 			return this;
 		},
+		removeMultiple(...names) {
+			const preSystems = this.getMatchingSystems();
+			names.forEach(name => {
+				delete this[name];
+			});
+			this.handleEnrollToSystems(preSystems);
+			return this;
+		},
 		handleEnrollToSystems(preSystems = []) {
 			const postSystems = this.getMatchingSystems();
 			const enteredSystems = postSystems.filter(system => !preSystems.includes(system));
