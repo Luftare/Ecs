@@ -208,7 +208,46 @@ const renderContext = {
 ecs.runGroup('model', deltaTimeInMs);
 ecs.runGroup('graphics', renderContext);
 ```
-## Tips for the usage
+## Optimization and tips
+Entities have handy `addMultiple` method that produces the same end result as chaining separate `add` methods. The difference is that `addMultiple` method updates system enrollment only once whereas multiple `add` calls update system enrollments on every call which can be expensive operation.
+```javascript
+const player = ecs.createEntity()
+  .addMultiple(
+    ["position", 50, 50],
+    ["velocity", 0, 0],
+    ["input"]
+  );
+```
+Components should be as atomic as possible. This increases the reusability of the component. However, sometimes the scope of the game might be so clear that for the sake of simplicity closely related components might be merged together. Here's an example where components are separated on atomic level:
+```javascript
+ecs.registerComponent('position', function(x = 0, y = 0) {
+  this.x = x;
+  this.y = y;
+});
+
+ecs.registerComponent('scale', function(x = 1, y = 1) {
+  this.x = x;
+  this.y = y;
+});
+
+ecs.registerComponent('rotation', function(angle = 0) {
+  this.angle = angle;
+});
+```
+...and here the components are merged as single component:
+```javascript
+ecs.registerComponent('transform', function(posX, posY, scaleX, scaleY, angle) {
+  this.position = {
+    x: posX,
+    y: posY
+  };
+  this.scale = {
+    x: scaleX,
+    y: scaleY
+  };
+  this.rotation = angle;
+});
+```
 Components with constructors can be optionally used although it is slightly against the paradigm of Ecs.
 ```javascript
 function Vector(x, y) {
