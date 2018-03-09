@@ -81,7 +81,7 @@ console.log(player.id);//--> 1
 Register systems to implement logic. Systems process entities that match their required components. `has` is an array defining all required components for an entity in order to be enrolled to the system. `not`is an array that can be used to exclude entities that have any of the components listed in the `not`array.
 ```javascript
 ecs.registerSystem({//move entities with velocity
-  components: ['position', 'velocity'],
+  has: ['position', 'velocity'],
   forEach(entity) {//iterates all entities with position and velocity component
     const { position, velocity } = entity;
     position.x += velocity.x;
