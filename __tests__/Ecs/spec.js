@@ -38,10 +38,8 @@ describe('When components and systems are defined', () => {
       },
       has: ['sprite', 'position'],
       not: ['hidden'],
-      forEach(entity, globalArg) {
-
-      },
-      group: 'misc'
+      forEach(entity, globalArg) {},
+      group: 'misc',
     });
 
     systems.move = ecs.registerSystem({
@@ -56,7 +54,7 @@ describe('When components and systems are defined', () => {
         position.y += velocity.y;
         moveSystemForEachMock(entity, globalArg);
       },
-      group: 'model'
+      group: 'model',
     });
 
     systems.noop = ecs.registerSystem({
@@ -64,7 +62,7 @@ describe('When components and systems are defined', () => {
         noopSystemPreMock(globalArg);
       },
       forEach(entity, globalArg) {},
-      group: 'misc'
+      group: 'misc',
     });
   });
 
@@ -95,12 +93,12 @@ describe('When components and systems are defined', () => {
     });
 
     it('should be able to receive multiple components', () => {
-      entity.addMultiple(
+      entity.addMultiple([
         ['position', 5, 5],
         ['velocity', 3, 3],
         ['stunned'],
-        ['hidden']
-      );
+        ['hidden'],
+      ]);
       expect(entity.has('position')).toEqual(true);
       expect(entity.has('velocity')).toEqual(true);
       expect(entity.has('stunned')).toEqual(true);
@@ -108,13 +106,13 @@ describe('When components and systems are defined', () => {
     });
 
     it('should be able to remove multiple components', () => {
-      entity.addMultiple(
+      entity.addMultiple([
         ['position', 5, 5],
         ['velocity', 3, 3],
         ['stunned'],
-        ['hidden']
-      );
-      entity.removeMultiple('position', 'velocity', 'stunned');
+        ['hidden'],
+      ]);
+      entity.removeMultiple(['position', 'velocity', 'stunned']);
       expect(entity.has('position')).toEqual(false);
       expect(entity.has('velocity')).toEqual(false);
       expect(entity.has('stunned')).toEqual(false);
@@ -274,7 +272,7 @@ describe('When components and systems are defined', () => {
         entities.forEach((entity, i) => {
           expect(systems.noop.entities.includes(entity)).toEqual(true);
           expect(systems.render.entities.includes(entity)).toEqual(false);
-          if(i < 2) {
+          if (i < 2) {
             expect(systems.move.entities.includes(entity)).toEqual(true);
           } else {
             expect(systems.move.entities.includes(entity)).toEqual(false);
